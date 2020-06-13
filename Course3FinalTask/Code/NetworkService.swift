@@ -12,7 +12,7 @@ import UIKit
 // MARK: - Network Service
 //
 
-struct UserInfo: Codable {
+struct User: Codable {
     var id: String
     var username: String
     var fullName: String
@@ -247,9 +247,9 @@ class NetworkService {
         task.resume()
     }
     
-    func currentUserInfoRequest(token: String, completion: @escaping (UserInfo?, String?) -> Void) {
+    func currentUserInfoRequest(token: String, completion: @escaping (User?, String?) -> Void) {
         let token = token
-        var user: UserInfo?
+        var user: User?
     
     //let url = URL(string: hostPath)!
     //var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
@@ -327,10 +327,10 @@ class NetworkService {
         task.resume()
     }
     
-    func userInfoRequest(token: String, userID: String, completion: @escaping (UserInfo?, String?) -> Void) {
+    func userInfoRequest(token: String, userID: String, completion: @escaping (User?, String?) -> Void) {
         let token = token
         let id = userID
-        var user: UserInfo?
+        var user: User?
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
@@ -397,10 +397,10 @@ class NetworkService {
         task.resume()
     }
     
-    func followUserRequest(token: String, userID: String, completion: @escaping (UserInfo?, String?) -> Void) {
+    func followUserRequest(token: String, userID: String, completion: @escaping (User?, String?) -> Void) {
         let token = token
         let id = userID
-        var user: UserInfo?
+        var user: User?
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
@@ -471,10 +471,10 @@ class NetworkService {
         task.resume()
     }
     
-    func unfollowUserRequest(token: String, userID: String, completion: @escaping (UserInfo?, String?) -> Void) {
+    func unfollowUserRequest(token: String, userID: String, completion: @escaping (User?, String?) -> Void) {
         let token = token
         let id = userID
-        var user: UserInfo?
+        var user: User?
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
@@ -545,10 +545,10 @@ class NetworkService {
         task.resume()
     }
     
-    func getFollowersRequest(token: String, userID: String, completion: @escaping ([UserInfo?], String?) -> Void) {
+    func getFollowersRequest(token: String, userID: String, completion: @escaping ([User?], String?) -> Void) {
         let token = token
         let id = userID
-        var followers: [UserInfo?]
+        var followers: [User?]
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
@@ -611,10 +611,10 @@ class NetworkService {
         task.resume()
     }
     
-    func getFollowingUsersRequest(token: String, userID: String, completion: @escaping ([UserInfo?], String?) -> Void) {
+    func getFollowingUsersRequest(token: String, userID: String, completion: @escaping ([User?], String?) -> Void) {
         let token = token
         let id = userID
-        var followingUsers: [UserInfo?]
+        var followingUsers: [User?]
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
@@ -1008,10 +1008,10 @@ class NetworkService {
         task.resume()
     }
     
-    func likesForPostRequest(token: String, postID: String, completion: @escaping ([UserInfo?], String?) -> Void) {
+    func getLikesForPostRequest(token: String, postID: String, completion: @escaping ([User?], String?) -> Void) {
         let token = token
         let id = postID
-        var users: [UserInfo?]
+        var users: [User?]
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
@@ -1222,7 +1222,7 @@ class NetworkService {
         do {
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let userInfo = try decoder.decode(UserInfo.self, from: data)
+            let userInfo = try decoder.decode(User.self, from: data)
             repositories = repositoriesInfo
         } catch {
             debugPrint(error)
