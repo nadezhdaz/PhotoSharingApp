@@ -7,9 +7,8 @@
 
 import Foundation
 import UIKit
-import DataProvider
 
-class UserListController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class UserListController: UIViewController, UITableViewDelegate, UITableViewDataSource { //}, SecureStorable {
     
     @IBOutlet var userListTableView: UITableView!
     @IBOutlet weak var userListNavigationItem: UINavigationItem!
@@ -18,8 +17,9 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
     var user: User?
     var post: Post?
     var users: [User] = []
-    var userIDs: [User.Identifier] = []
+    var userIDs: [User] = []
     var listIdentifier: String = ""
+    var networkHandler = SecureNetworkHandler()
 
     
     override func viewDidLoad() {
@@ -53,80 +53,127 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
     
     private func setupList() {
         
-        DataProviders.shared.usersDataProvider.currentUser(queue: self.queue, handler: { [weak self] currentUser in
-            guard let self = self else { return }
-            DispatchQueue.main.async {
-                Spinner.start()
-                if currentUser != nil {
-                    if self.user == nil {
-                        self.user = currentUser!
-                    }
+        DispatchQueue.main.async {
+            if self.user == nil {
+                self.networkHandler.getCurrentUserInfo(completion: { [weak self] user in
+                    self?.user = user })
                 }
-                else {
-                    self.showError()
-                }
-                
-                switch self.listIdentifier {
+            
+            
+            switch self.listIdentifier {
                 case "followers":
                     self.userListNavigationItem.title = "Followers"
-                    DataProviders.shared.usersDataProvider.usersFollowingUser(with: self.user!.id, queue: self.queue, handler: { [weak self] incomingUsers in
-                        guard let self = self else { return }
-                        DispatchQueue.main.async {
-                            if incomingUsers != nil {
-                                self.users = incomingUsers!
-                                self.userListTableView.reloadData()
-                                Spinner.stop()
-                            }
-                            else {
-                                self.showError()
-                            }
-                        }
+                    self.networkHandler.getFollowers(userID: self.user.id, completion: { [weak self] users in
+                        self?.users = users
                     })
+                    //users = getFollowers(userID: user?.id)
+                    self.userListTableView.reloadData()
+                    Spinner.stop()
                 case "following":
                     self.userListNavigationItem.title = "Following"
-                    DataProviders.shared.usersDataProvider.usersFollowedByUser(with: self.user!.id, queue: self.queue, handler: { [weak self] incomingUsers in
-                        guard let self = self else { return }
-                        DispatchQueue.main.async {
-                            if incomingUsers != nil {
-                                self.users = incomingUsers!
-                                self.userListTableView.reloadData()
-                                Spinner.stop()
-                            }
-                            else {
-                                self.showError()
-                            }
-                        }
+                    self.networkHandler.getFollowingUsers(userID: self.user?.id, completion: { [weak self] users in
+                        self?.users = users
                     })
+                    //users = getFollowingUsers(userID: user?.id)
+                    self.userListTableView.reloadData()
+                    Spinner.stop()
                 case "likes":
                     self.userListNavigationItem.title = "Likes"
-                    DataProviders.shared.postsDataProvider.usersLikedPost(with: self.post!.id, queue: self.queue, handler: { [weak self] incomingUsers in
-                        guard let self = self else { return }
-                        DispatchQueue.main.async {
-                            if incomingUsers != nil {
-                                self.users = incomingUsers!
-                                self.userListTableView.reloadData()
-                                Spinner.stop()
-                            }
-                            else {
-                                self.showError()
-                            }
-                        }
+                    self.networkHandler.getLikesForPost(userID: self.post?.id, completion: { [weak self] users in
+                        self?.users = users
                     })
+                    //users = getLikesForPost(postID: post?.id)
+                    self.userListTableView.reloadData()
+                    Spinner.stop()
                     
                 default:
                     print("List identifier error")
                     self.showError()
                 }
                 
-                self.userListTableView.rowHeight = UITableViewAutomaticDimension
-                self.userListTableView.estimatedRowHeight = 45.0
+            self.userListTableView.rowHeight = UITableViewAutomaticDimension
+            self.userListTableView.estimatedRowHeight = 45.0
                 
-                self.userListTableView.register(UINib(nibName: String(describing: UserListCell.self), bundle: nil), forCellReuseIdentifier: String(describing: UserListCell.self))
+            self.userListTableView.register(UINib(nibName: String(describing: UserListCell.self), bundle: nil), forCellReuseIdentifier: String(describing: UserListCell.self))
                 
-                self.userListTableView.delegate = self
-                self.userListTableView.dataSource = self
+            self.userListTableView.delegate = self
+            self.userListTableView.dataSource = self
             }
-        })
+        
+     //   DataProviders.shared.usersDataProvider.currentUser(queue: self.queue, handler: { [weak self] currentUser in
+     //       guard let self = self else { return }
+     //       DispatchQueue.main.async {
+     //           Spinner.start()
+     //           if currentUser != nil {
+     //               if self.user == nil {
+     //                   self.user = currentUser!
+     //               }
+     //           }
+     //           else {
+     //               self.showError()
+     //           }
+     //
+     //         switch self.listIdentifier {
+     //         case "followers":
+     //             self.userListNavigationItem.title = "Followers"
+     //             DataProviders.shared.usersDataProvider.usersFollowingUser(with: self.user!.id, queue: self.queue, handler: { [weak self] incomingUsers in
+     //                 guard let self = self else { return }
+     //                 DispatchQueue.main.async {
+     //                     if incomingUsers != nil {
+     //                         self.users = incomingUsers!
+     //                         self.userListTableView.reloadData()
+     //                         Spinner.stop()
+     //                     }
+     //                     else {
+     //                         self.showError()
+     //                     }
+     //                 }
+     //             })
+     //         case "following":
+     //             self.userListNavigationItem.title = "Following"
+     //             DataProviders.shared.usersDataProvider.usersFollowedByUser(with: self.user!.id, queue: self.queue, handler: { [weak self] incomingUsers in
+     //                 guard let self = self else { return }
+     //                 DispatchQueue.main.async {
+     //                     if incomingUsers != nil {
+     //                         self.users = incomingUsers!
+     //                         self.userListTableView.reloadData()
+     //                         Spinner.stop()
+     //                     }
+     //                     else {
+     //                         self.showError()
+     //                     }
+     //                 }
+     //             })
+     //         case "likes":
+     //             self.userListNavigationItem.title = "Likes"
+     //             DataProviders.shared.postsDataProvider.usersLikedPost(with: self.post!.id, queue: self.queue, handler: { [weak self] incomingUsers in
+     //                 guard let self = self else { return }
+     //                 DispatchQueue.main.async {
+     //                     if incomingUsers != nil {
+     //                         self.users = incomingUsers!
+     //                         self.userListTableView.reloadData()
+     //                         Spinner.stop()
+     //                     }
+     //                     else {
+     //                         self.showError()
+     //                     }
+     //                 }
+     //             })
+     //
+     //         default:
+     //             print("List identifier error")
+     //             self.showError()
+     //         }
+     //
+     //         self.userListTableView.rowHeight = UITableViewAutomaticDimension
+     //         self.userListTableView.estimatedRowHeight = 45.0
+     //
+     //         self.userListTableView.register(UINib(nibName: String(describing: UserListCell.self), bundle: nil), forCellReuseIdentifier: String(describing: UserListCell.self))
+     //
+     //         self.userListTableView.delegate = self
+     //         self.userListTableView.dataSource = self
+     //     }
+      //  })
 
     }
 }

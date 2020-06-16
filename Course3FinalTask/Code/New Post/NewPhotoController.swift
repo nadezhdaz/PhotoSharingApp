@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import DataProvider
 
 class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
     
@@ -18,7 +17,12 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
         }
     }
     
-    var photos = DataProviders.shared.photoProvider.photos()
+    var photos = [String]()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setPhotos()
+    }
     
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return photos.count
@@ -58,6 +62,18 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return 0.0
+    }
+    
+    private func setPhotos()  {
+        if let path = Bundle.main.resourcePath {
+            let imagePath = path + "/new"
+            let filemanager = FileManager.default
+            let photosArray = try! filemanager.contentsOfDirectory(atPath: imagePath)
+
+            for item in photosArray {
+                self.photos.append(item)
+            }
+        }
     }
     
 }

@@ -34,6 +34,7 @@ struct Post: Codable {
     var authorUsername: String
     var authorAvatar: URL
 }
+
 /// Runs query data task
 class NetworkService {
     //
@@ -54,24 +55,26 @@ class NetworkService {
     //
     
     var dataTask: URLSessionDataTask?
-    var errorMessage = ""
-    
+    //var errorMessage = ""
+    var errorText = ""
     
     //
     // MARK: - Type Alias
     //
-    typealias JSONDictionary = [String: Any]
-    typealias AuthorizationResult = (String, String) -> Void
+    //typealias JSONDictionary = [String: Any]
+    //typealias AuthorizationResult = (String?, String) -> Void
     
     //
     // MARK: - Internal Methods
     //
     
-    func signInRequest(login: String, password: String, completion: @escaping AuthorizationResult) {
+
+    func signInRequest(login: String, password: String, completion: @escaping (String?, String?) -> Void) {
         let login = login
         let password = password
-        let loginString = "\(account):\(password)"
+        let loginString = "\(login):\(password)"
         var token: String?
+        var errorMessage = ""
         
         guard let loginData = loginString.data(using: String.Encoding.utf8) else {
             return
@@ -90,11 +93,11 @@ class NetworkService {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = jsonHeaders
+        var request = URLRequest(url: url)
+        request.allHTTPHeaderFields = jsonHeaders
         
-        urlRequest.httpMethod = "POST"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "POST"
+        //request.httpBody = Data(query.utf8)
         
         /*let url = URL(string: hostPath)!
         var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
@@ -122,42 +125,38 @@ class NetworkService {
         //    print(error.localizedDescription)
         //}
         
-        let task = URLSession.shared.dataTask(with: urlRequest) {
+        let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
             defer {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
-            } else if
-                let data = data,
+            if let data = data,
                 let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
                 
                  do {
                     let decoder = JSONDecoder()
                     //decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let userToken = try decoder.decode(String, from: data)
-                    token = userToken
+                    token = try decoder.decode(String.self, from: data)
+                    //token = token
                  } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
                 }
-                completion(userToken, self?.errorMessage ?? "")
+                completion(token, nil)
             }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 422 {
-                self?.errorMessage += "\(response.statusCode) Inavalid login or password: " + error.localizedDescription + "\n"
-                completion(self?.token, self?.errorMessage ?? "")
+                errorMessage = "Unprocessable"
+                completion(nil, errorMessage)
             }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(self?.token, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -165,8 +164,9 @@ class NetworkService {
         task.resume()
     }
     
-    func signOutRequest(token: String, completion: @escaping (String) -> Void) {
+    func signOutRequest(token: String, completion: @escaping (String?) -> Void) {
         let token = token
+        var errorMessage = ""
         
         let url = URL(string: hostPath)!
         var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
@@ -180,7 +180,7 @@ class NetworkService {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         //request.httpBody = Data(query.utf8)
-        request.setValue(token, forHTTPHeaderField: "header")
+        //request.setValue(token, forHTTPHeaderField: "header")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -191,14 +191,14 @@ class NetworkService {
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
                 print("User signed out")
-                completion(self?.errorMessage ?? "")
+                completion(nil)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(errorMessage)
             }
             
         }
@@ -206,8 +206,9 @@ class NetworkService {
         task.resume()
     }
     
-    func checkTokenRequest(token: String, completion: @escaping (Bool, String) -> Void) {
+    func checkTokenRequest(token: String, completion: @escaping (Bool, String?) -> Void) {
         let token = token
+        var errorMessage = ""
         
         let url = URL(string: hostPath)!
         var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
@@ -221,7 +222,7 @@ class NetworkService {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         //request.httpBody = Data(query.utf8)
-        request.setValue(token, forHTTPHeaderField: "header")
+        //request.setValue(token, forHTTPHeaderField: "header")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -232,14 +233,14 @@ class NetworkService {
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
                 print("Token is valid")
-                completion(true, self?.errorMessage ?? "")
+                completion(true, nil)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(false, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(false, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(false, self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(false, errorMessage)
             }
             
         }
@@ -250,6 +251,7 @@ class NetworkService {
     func currentUserInfoRequest(token: String, completion: @escaping (User?, String?) -> Void) {
         let token = token
         var user: User?
+        var errorMessage = ""
     
     //let url = URL(string: hostPath)!
     //var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
@@ -269,20 +271,19 @@ class NetworkService {
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = currentUserInfoPath
-        //urlComponents.queryItems = [
-        //    URLQueryItem(name: "login", value: login),
-        //    URLQueryItem(name: "password", value: password)
-        //]
+        urlComponents.queryItems = [
+            URLQueryItem(name: "header", value: token)
+        ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "GET"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "GET"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -291,7 +292,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -300,26 +301,26 @@ class NetworkService {
                   do {
                     let decoder = JSONDecoder()
                     decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let userInfo = try decoder.decode(UserInfo.self, from: data)
+                    let userInfo = try decoder.decode(User.self, from: data)
                     user = userInfo
                     
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(user, self?.errorMessage ?? "")
+                completion(user, nil)
                 
             }
                 
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(user, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -331,25 +332,25 @@ class NetworkService {
         let token = token
         let id = userID
         var user: User?
+        var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = "\(usersInfoPath)/\(id)"
-        //urlComponents.queryItems = [
-        //    URLQueryItem(name: "login", value: login),
-        //    URLQueryItem(name: "password", value: password)
-        //]
+        urlComponents.queryItems = [
+            URLQueryItem(name: "header", value: token)
+        ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "GET"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "GET"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -358,7 +359,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -367,29 +368,29 @@ class NetworkService {
                   do {
                     let decoder = JSONDecoder()
                     decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let userInfo = try decoder.decode(UserInfo.self, from: data)
+                    let userInfo = try decoder.decode(User.self, from: data)
                     user = userInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(user, self?.errorMessage ?? "")
+                completion(user, nil)
                 
             }
                 else if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                    self?.errorMessage += "\(response.statusCode) User not found: " + error.localizedDescription + "\n"
-                    completion(user, self?.errorMessage ?? "")
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
             }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(user, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -401,24 +402,26 @@ class NetworkService {
         let token = token
         let id = userID
         var user: User?
+        var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = "\(usersInfoPath)/follow"
         urlComponents.queryItems = [
-            URLQueryItem(name: "userID", value: id)
+            URLQueryItem(name: "userID", value: id),
+            URLQueryItem(name: "header", value: token)
         ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "POST"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "POST"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -427,7 +430,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -436,34 +439,34 @@ class NetworkService {
                   do {
                     let decoder = JSONDecoder()
                     decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let userInfo = try decoder.decode(UserInfo.self, from: data)
+                    let userInfo = try decoder.decode(User.self, from: data)
                     user = userInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(user, self?.errorMessage ?? "")
+                completion(user, nil)
                 
             }
                 else if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                    self?.errorMessage += "\(response.statusCode) User not found: " + error.localizedDescription + "\n"
-                    completion(user, self?.errorMessage ?? "")
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
             }
                 else if let response = response as? HTTPURLResponse,
                     response.statusCode == 406 {
-                        self?.errorMessage += "\(response.statusCode) Attempt to follow yourself: " + error.localizedDescription + "\n"
-                        completion(user, self?.errorMessage ?? "")
+                        errorMessage = "Not acceptable"
+                        completion(nil, errorMessage)
                 }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(user, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -475,24 +478,26 @@ class NetworkService {
         let token = token
         let id = userID
         var user: User?
+        var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = "\(usersInfoPath)/unfollow"
         urlComponents.queryItems = [
-            URLQueryItem(name: "userID", value: id)
+            URLQueryItem(name: "userID", value: id),
+            URLQueryItem(name: "header", value: token)
         ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "POST"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "POST"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -501,7 +506,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -510,34 +515,34 @@ class NetworkService {
                   do {
                     let decoder = JSONDecoder()
                     decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let userInfo = try decoder.decode(UserInfo.self, from: data)
+                    let userInfo = try decoder.decode(User.self, from: data)
                     user = userInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(user, self?.errorMessage ?? "")
+                completion(user, nil)
                 
             }
                 else if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                    self?.errorMessage += "\(response.statusCode) User not found: " + error.localizedDescription + "\n"
-                    completion(user, self?.errorMessage ?? "")
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
             }
                 else if let response = response as? HTTPURLResponse,
                     response.statusCode == 406 {
-                        self?.errorMessage += "\(response.statusCode) Attempt to unfollow yourself: " + error.localizedDescription + "\n"
-                        completion(user, self?.errorMessage ?? "")
+                        errorMessage = "Not acceptable"
+                        completion(nil, errorMessage)
                 }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(user, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -545,25 +550,29 @@ class NetworkService {
         task.resume()
     }
     
-    func getFollowersRequest(token: String, userID: String, completion: @escaping ([User?], String?) -> Void) {
+    func getFollowersRequest(token: String, userID: String, completion: @escaping ([User]?, String?) -> Void) {
         let token = token
         let id = userID
-        var followers: [User?]
+        var followers: [User]?
+        var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = "\(usersInfoPath)/\(id)/followers"
+        urlComponents.queryItems = [
+            URLQueryItem(name: "header", value: token)
+        ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "GET"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "GET"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -572,7 +581,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -581,29 +590,29 @@ class NetworkService {
                   do {
                     let decoder = JSONDecoder()
                     decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let followersUserInfo = try decoder.decode([UserInfo].self, from: data)
+                    let followersUserInfo = try decoder.decode([User].self, from: data)
                     followers = followersUserInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(followers, self?.errorMessage ?? "")
+                completion(followers, nil)
                 
             }
                 else if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                    self?.errorMessage += "\(response.statusCode) User not found: " + error.localizedDescription + "\n"
-                    completion(nil, self?.errorMessage ?? "")
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
             }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -611,25 +620,29 @@ class NetworkService {
         task.resume()
     }
     
-    func getFollowingUsersRequest(token: String, userID: String, completion: @escaping ([User?], String?) -> Void) {
+    func getFollowingUsersRequest(token: String, userID: String, completion: @escaping ([User]?, String?) -> Void) {
         let token = token
         let id = userID
-        var followingUsers: [User?]
+        var followingUsers: [User]?
+        var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = "\(usersInfoPath)/\(id)/following"
+        urlComponents.queryItems = [
+            URLQueryItem(name: "header", value: token)
+        ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "GET"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "GET"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -638,7 +651,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -647,29 +660,29 @@ class NetworkService {
                   do {
                     let decoder = JSONDecoder()
                     decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let followingUserInfo = try decoder.decode([UserInfo].self, from: data)
+                    let followingUserInfo = try decoder.decode([User].self, from: data)
                     followingUsers = followingUserInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(followingUsers, self?.errorMessage ?? "")
+                completion(followingUsers, nil)
                 
             }
                 else if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                    self?.errorMessage += "\(response.statusCode) User not found: " + error.localizedDescription + "\n"
-                    completion(nil, self?.errorMessage ?? "")
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
             }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -677,25 +690,29 @@ class NetworkService {
         task.resume()
     }
     
-    func getPostsOfUserRequest(token: String, userID: String, completion: @escaping ([Post?], String?) -> Void) {
+    func getPostsOfUserRequest(token: String, userID: String, completion: @escaping ([Post]?, String?) -> Void) {
         let token = token
         let id = userID
-        var posts: [Post?]
+        var posts: [Post]?
+        var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = "\(usersInfoPath)/\(id)/posts"
+        urlComponents.queryItems = [
+            URLQueryItem(name: "header", value: token)
+        ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "GET"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "GET"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -704,7 +721,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -717,25 +734,25 @@ class NetworkService {
                     posts = postsInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(posts, self?.errorMessage ?? "")
+                completion(posts, nil)
                 
             }
                 else if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                    self?.errorMessage += "\(response.statusCode) User not found: " + error.localizedDescription + "\n"
-                    completion(nil, self?.errorMessage ?? "")
+                    errorMessage = "User not found"
+                    completion(nil, errorMessage)
             }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -743,25 +760,28 @@ class NetworkService {
         task.resume()
     }
     
-    func getFeedRequest(token: String, userID: String, completion: @escaping ([Post?], String?) -> Void) {
+    func getFeedRequest(token: String, completion: @escaping ([Post]?, String?) -> Void) {
         let token = token
-        let id = userID
-        var posts: [Post?]
+        var posts: [Post]?
+        var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = "\(postsInfoPath)/feed"
+        urlComponents.queryItems = [
+            URLQueryItem(name: "header", value: token)
+        ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "GET"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "GET"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -770,7 +790,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -783,20 +803,20 @@ class NetworkService {
                     posts = postsInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(posts, self?.errorMessage ?? "")
+                completion(posts, nil)
                 
             }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -808,21 +828,25 @@ class NetworkService {
         let token = token
         let id = postID
         var post: Post?
+        var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = "\(postsInfoPath)/\(id)"
+        urlComponents.queryItems = [
+            URLQueryItem(name: "header", value: token)
+        ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "GET"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "GET"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -831,7 +855,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -844,25 +868,25 @@ class NetworkService {
                     post = postInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(post, self?.errorMessage ?? "")
+                completion(post, nil)
                 
             }
                 else if let response = response as? HTTPURLResponse,
                     response.statusCode == 404 {
-                        self?.errorMessage += "\(response.statusCode) Post not found: " + error.localizedDescription + "\n"
-                        completion(nil, self?.errorMessage ?? "")
+                        errorMessage = "Not found"
+                        completion(nil, errorMessage)
                 }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Unknown error:"
+                completion(nil, errorMessage)
             }
             
         }
@@ -874,24 +898,26 @@ class NetworkService {
         let token = token
         let id = postID
         var post: Post?
+        var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = "\(postsInfoPath)/like"
         urlComponents.queryItems = [
-            URLQueryItem(name: "postID", value: id)
+            URLQueryItem(name: "postID", value: id),
+            URLQueryItem(name: "header", value: token)
         ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "POST"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "POST"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -900,7 +926,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -913,25 +939,25 @@ class NetworkService {
                     post = postInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(posts, self?.errorMessage ?? "")
+                completion(post, nil)
                 
             }
                 else if let response = response as? HTTPURLResponse,
                     response.statusCode == 404 {
-                        self?.errorMessage += "\(response.statusCode) Post not found: " + error.localizedDescription + "\n"
-                        completion(nil, self?.errorMessage ?? "")
+                        errorMessage = "Not found"
+                        completion(nil, errorMessage)
                 }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -939,28 +965,30 @@ class NetworkService {
         task.resume()
     }
     
-    func unLikePostRequest(token: String, postID: String, completion: @escaping (Post?, String?) -> Void) {
+    func unlikePostRequest(token: String, postID: String, completion: @escaping (Post?, String?) -> Void) {
         let token = token
         let id = postID
         var post: Post?
+        var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = "\(postsInfoPath)/unlike"
         urlComponents.queryItems = [
-            URLQueryItem(name: "postID", value: id)
+            URLQueryItem(name: "postID", value: id),
+            URLQueryItem(name: "header", value: token)
         ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "POST"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "POST"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -969,7 +997,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -982,25 +1010,25 @@ class NetworkService {
                     post = postInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(posts, self?.errorMessage ?? "")
+                completion(post, nil)
                 
             }
                 else if let response = response as? HTTPURLResponse,
                     response.statusCode == 404 {
-                        self?.errorMessage += "\(response.statusCode) Post not found: " + error.localizedDescription + "\n"
-                        completion(nil, self?.errorMessage ?? "")
+                        errorMessage = "Not found"
+                        completion(nil, errorMessage)
                 }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -1008,25 +1036,30 @@ class NetworkService {
         task.resume()
     }
     
-    func getLikesForPostRequest(token: String, postID: String, completion: @escaping ([User?], String?) -> Void) {
+    func getLikesForPostRequest(token: String, postID: String, completion: @escaping ([User]?, String?) -> Void) {
         let token = token
         let id = postID
-        var users: [User?]
+        var users: [User]?
+        var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.path = "\(postsInfoPath)/\(id)/likes"
+        urlComponents.queryItems = [
+            URLQueryItem(name: "header", value: token)
+        ]
+        
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "GET"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "GET"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -1035,7 +1068,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -1044,29 +1077,29 @@ class NetworkService {
                   do {
                     let decoder = JSONDecoder()
                     decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let usersInfo = try decoder.decode([UserInfo].self, from: data)
+                    let usersInfo = try decoder.decode([User].self, from: data)
                     users = usersInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(users, self?.errorMessage ?? "")
+                completion(users, nil)
                 
             }
                 else if let response = response as? HTTPURLResponse,
                     response.statusCode == 404 {
-                        self?.errorMessage += "\(response.statusCode) Post not found: " + error.localizedDescription + "\n"
-                        completion(nil, self?.errorMessage ?? "")
+                        errorMessage = "Not found"
+                        completion(nil, errorMessage)
                 }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -1079,8 +1112,9 @@ class NetworkService {
         let image = image
         let description = description
         var post: Post?
+        var errorMessage = ""
         
-        guard let imageData = image.jpegData(compressionQuality: 1) else {
+        guard let imageData = UIImageJPEGRepresentation(image, 1.0) else {
             return
         }
         let base64ImageString = imageData.base64EncodedString()
@@ -1092,18 +1126,19 @@ class NetworkService {
         urlComponents.path = "\(postsInfoPath)/create"
         urlComponents.queryItems = [
             URLQueryItem(name: "image", value: base64ImageString),
-            URLQueryItem(name: "description", value: description)
+            URLQueryItem(name: "description", value: description),
+            URLQueryItem(name: "header", value: token)
         ]
         
             guard let url = urlComponents.url else {
                 return
             }
         
-        var urlRequest = URLRequest(url: url)
-        urlRequest.allHTTPHeaderFields = token
+        var request = URLRequest(url: url)
+        //request.allHTTPHeaderFields = token
         
-        urlRequest.httpMethod = "POST"
-        //urlRequest.httpBody = Data(query.utf8)
+        request.httpMethod = "POST"
+        //request.httpBody = Data(query.utf8)
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -1112,7 +1147,7 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -1125,20 +1160,20 @@ class NetworkService {
                     post = postInfo
                   } catch {
                     debugPrint(error)
-                    errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+                    print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
-                completion(posts, self?.errorMessage ?? "")
+                completion(post, nil)
                 
             }
             else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
-                self?.errorMessage += "\(response.statusCode) Bad request: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
             } else {
-                self?.errorMessage += "\(response.statusCode) Unknown error: " + error.localizedDescription + "\n"
-                completion(nil, self?.errorMessage ?? "")
+                errorMessage = "Unknown error"
+                completion(nil, errorMessage)
             }
             
         }
@@ -1179,14 +1214,14 @@ class NetworkService {
             }
             
             if let error = error {
-                self?.errorMessage += "DataTask error: " + error.localizedDescription + "\n"
+                print("DataTask error: " + error.localizedDescription + "\n")
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
                 
                 self?.parseUserData(data)
-                completion(self?.user, self?.errorMessage ?? "")
+                completion(self?.user, errorMessage)
             }
             else {
                 
@@ -1194,7 +1229,7 @@ class NetworkService {
         }
         
         task.resume()
-    }*/
+    }
     
     //
     // MARK: - Private Methods
@@ -1210,7 +1245,7 @@ class NetworkService {
             user = userInfo
         } catch {
             debugPrint(error)
-            errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+            print("JSONDecoder error: \(error.localizedDescription)\n")
             return
         }
         
@@ -1226,9 +1261,9 @@ class NetworkService {
             repositories = repositoriesInfo
         } catch {
             debugPrint(error)
-            errorMessage += "JSONDecoder error: \(error.localizedDescription)\n"
+            print("JSONDecoder error: \(error.localizedDescription)\n")
             return
         }
 
-    }
+    }*/
 }

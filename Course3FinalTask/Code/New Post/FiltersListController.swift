@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import DataProvider
 
 class FiltersListController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     
@@ -23,8 +22,8 @@ class FiltersListController: UIViewController, UICollectionViewDataSource, UICol
         navigationController.pushViewController(destinationController, animated: true)
     }
     
-    let imagesPhotoArray = DataProviders.shared.photoProvider.photos()
-    let imagesPreviewArray = DataProviders.shared.photoProvider.thumbnailPhotos()
+    let imagesPhotoArray = [String]()
+    let imagesPreviewArray = [String]()//DataProviders.shared.photoProvider.thumbnailPhotos()
     
     let queue = OperationQueue()
     

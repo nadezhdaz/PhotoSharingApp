@@ -7,7 +7,7 @@
 
 import UIKit
 
-class AuthorizationViewController: UIViewController, UITextFieldDelegate, SecureStorable {
+class AuthorizationViewController: UIViewController, UITextFieldDelegate {//}, SecureStorable {    
     
     //
     // MARK: - Outlets
@@ -31,12 +31,12 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate, Secure
     @IBOutlet weak var signInButton: UIButton! {
         didSet {
             signInButton.isEnabled = false
-            signInButton.setBackground(UIColor(red: 0.00, green: 0.48, blue: 1.00, alpha: 1.00), for: .normal)
-            signInButton.setBackground(UIColor(red: 0.00, green: 0.48, blue: 1.00, alpha: 0.3), for: .disabled)
+            signInButton.backgroundColor = UIColor(red: 0.00, green: 0.48, blue: 1.00, alpha: 1.00)//, for: .normal
+            //signInButton.setBackground(UIColor(red: 0.00, green: 0.48, blue: 1.00, alpha: 0.3), for: .disabled)
         }
     }
     
-    func textFieldDidChange(textField: UITextField){
+    @objc func textFieldDidChange(textField: UITextField){
         signInButton.isEnabled = true
         print("Text changed")
         
@@ -44,28 +44,29 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate, Secure
     
     var networkService = NetworkService()
     var keychainService = KeychainService()
+    var networkHandler = SecureNetworkHandler()
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         guard let username = usernameTextField.text, let password = passwordTextField.text else {
             print("No username or password received")
-            return
+            return true
         }
         
         guard username.count > 0, password.count > 0 else {
             print("No username or password received")
-            return
+            return false
         }
         
-        login(login: username, password: password)
+        networkHandler.login(login: username, password: password)
         
         //authorizationRequest(login: username, password: password)
         
         print("TextField should return method called")
         textField.resignFirstResponder();
-        return true;
+        return true
     }
     
-    private func authorizationRequest(login: String, password: String) {
+   /* private func authorizationRequest(login: String, password: String) {
         
         networkService.signInRequest(login: login, password: password, completion: { [weak self] token, errorMessage in
             if let token = token {
@@ -77,14 +78,14 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate, Secure
                 }
             }
             else if errorMessage != nil {
-                showError(with: errorMessage)
+                self?.showError(with: errorMessage)
             }
             else {
-                showError()
+                self?.showError()
             }
             
         })
-    }
+    }*/
     
     
 }

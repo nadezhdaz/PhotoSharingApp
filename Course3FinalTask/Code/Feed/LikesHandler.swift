@@ -50,7 +50,7 @@ class LikesHandler: UIViewController {
             guard let self = self else { return }
             DispatchQueue.main.async {
                 if incomingPosts != nil {
-                    Globals.posts = incomingPosts!
+                    Posts.list = incomingPosts!
                     table.reloadData()
                     table.layoutIfNeeded()
                 }

@@ -7,9 +7,8 @@
 
 import Foundation
 import UIKit
-import DataProvider
 
-class ProfileViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+class ProfileViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout { //, SecureStorable {
     
     @IBOutlet weak var usernameTitle: UINavigationItem! //{
      //   didSet {
@@ -26,7 +25,6 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
      //       photosCollectionView.reloadData()
      //   }
    // }
-    
     var userPosts: [Post] = []
     var user: User?
     var currentUser: User?
@@ -37,7 +35,8 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupUser()
+        addLogoutButton()
+        setupUserPosts()
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -93,8 +92,13 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
     func followButtonHandler(_ view: HeaderCollectionViewCell) {
         guard user != nil && currentUser != nil else { return }
         
-        if user!.currentUserFollowsThisUser {
-            DataProviders.shared.usersDataProvider.unfollow(user!.id, queue: self.queue, handler: { [weak self] incomingUser in
+        if user?.currentUserFollowsThisUser {
+            unfollowUser(userID: user?.id)
+            user?.followedByCount -= 1
+            currentUser!.followsCount -= 1
+            user?.currentUserFollowsThisUser = false
+            view.updateFollows(user)
+            /*DataProviders.shared.usersDataProvider.unfollow(user!.id, queue: self.queue, handler: { [weak self] incomingUser in
                 guard let self = self else { return }
                 DispatchQueue.main.async {
                     if incomingUser != nil {
@@ -106,11 +110,16 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
                     
                 }
                 
-            })
+            })*/
             
         }
         else {
-            DataProviders.shared.usersDataProvider.follow(user!.id, queue: self.queue, handler: { [weak self] incomingUser in
+            followUser(userID: user?.id)
+            user?.followedByCount += 1
+            currentUser!.followsCount += 1
+            user?.currentUserFollowsThisUser = false
+            view.updateFollows(user)
+            /*DataProviders.shared.usersDataProvider.follow(user!.id, queue: self.queue, handler: { [weak self] incomingUser in
                 guard let self = self else { return }
                 DispatchQueue.main.async {
                     if incomingUser != nil {
@@ -122,7 +131,7 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
                     
                 }
                 
-            })
+            })*/
         }
         
     }
@@ -131,7 +140,8 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "userListVC") as? UserListController else { return }
         destinationController.listIdentifier = "followers"
         Spinner.start()
-        DataProviders.shared.usersDataProvider.user(with: view.authorID, queue: self.queue, handler: { [weak self] incomingUser in
+        destinationController.user = getUserInfo(userID: view.authorID)
+        /*DataProviders.shared.usersDataProvider.user(with: view.authorID, queue: self.queue, handler: { [weak self] incomingUser in
             guard let self = self else { return }
             DispatchQueue.main.async {
             if incomingUser != nil {
@@ -141,7 +151,7 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
                 self.showError()
                 }
             }
-        })
+        })*/
         
         self.navigationController!.pushViewController(destinationController, animated: true)
     }
@@ -150,7 +160,8 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "userListVC") as? UserListController else { return }
         destinationController.listIdentifier = "following"
         Spinner.start()
-        DataProviders.shared.usersDataProvider.user(with: view.authorID, queue: self.queue, handler: { [weak self] incomingUser in
+        destinationController.user = getUserInfo(userID: view.authorID)
+        /*DataProviders.shared.usersDataProvider.user(with: view.authorID, queue: self.queue, handler: { [weak self] incomingUser in
             guard let self = self else { return }
             DispatchQueue.main.async {
             if incomingUser != nil {
@@ -160,54 +171,96 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
                 self.showError()
                 }
             }
-        })
+        })*/
         
         self.navigationController!.pushViewController(destinationController, animated: true)
     }
     
-    private func setupUser() {
+    private func setupUserPosts() {
         Spinner.start()
-        DataProviders.shared.usersDataProvider.currentUser(queue: self.queue, handler: { [weak self] currentUser in
-            guard let self = self else { return }
-            DispatchQueue.main.async {
-                if currentUser != nil {
-                    if self.user == nil {
-                        self.user = currentUser!
-                    }
-                    self.currentUser = currentUser!
-                    if self.user?.id == currentUser?.id {
-                        self.isCurrentUserProfile = true
-                    }
-                    
-                    DataProviders.shared.postsDataProvider.findPosts(by: self.user!.id, queue: self.queue, handler: { [weak self] incomingPosts in
-                        guard let self = self else { return }
-                        DispatchQueue.main.async {
-                            if incomingPosts != nil {
-                                self.userPosts = incomingPosts!
-                                self.photosCollectionView.layoutIfNeeded()
-                                self.photosCollectionView.reloadData()
-                            }
-                            else {
-                                self.showError()
-                            }
-                            Spinner.stop()
-                        }
-                    })
-                }
-                else {
-                    self.showError()
-                }
-                
-                self.usernameTitle.title = self.user!.username
-                self.photosCollectionView.register(cellType: PhotoCollectionViewCell.self)
-                self.photosCollectionView.register(viewType: HeaderCollectionViewCell.self, kind: UICollectionElementKindSectionHeader)
-                
-                self.photosCollectionView.delegate = self
-                self.photosCollectionView.dataSource = self
-                self.photosCollectionView.reloadData()
-                
+        
+        DispatchQueue.main.async {
+            if user == nil {
+                user = getCurrentUserInfo()
+                currentUser = user
             }
-        })
+            if user?.id == currentUser?.id {
+                isCurrentUserProfile = true
+            }
+            
+            userPosts = getPostsOfUser(userID: user?.id)
+            photosCollectionView.layoutIfNeeded()
+            photosCollectionView.reloadData()
+            Spinner.stop()
+        }
+        
+        usernameTitle.title = user?.username
+        photosCollectionView.register(cellType: PhotoCollectionViewCell.self)
+        photosCollectionView.register(viewType: HeaderCollectionViewCell.self, kind: UICollectionElementKindSectionHeader)
+        photosCollectionView.delegate = self
+        photosCollectionView.dataSource = self
+        photosCollectionView.reloadData()
+        
+    }
+    
+        
+       // DataProviders.shared.usersDataProvider.currentUser(queue: self.queue, handler: { [weak self] currentUser in
+       //     guard let self = self else { return }
+       //     DispatchQueue.main.async {
+       //         if currentUser != nil {
+       //             if self.user == nil {
+       //                 self.user = currentUser!
+       //             }
+       //             self.currentUser = currentUser!
+       //             if self.user?.id == currentUser?.id {
+       //                 self.isCurrentUserProfile = true
+       //             }
+       //
+       //             DataProviders.shared.postsDataProvider.findPosts(by: self.user!.id, queue: self.queue, handler: { [weak self] incomingPosts in
+       //                 guard let self = self else { return }
+       //                 DispatchQueue.main.async {
+       //                     if incomingPosts != nil {
+       //                         self.userPosts = incomingPosts!
+       //                         self.photosCollectionView.layoutIfNeeded()
+       //                         self.photosCollectionView.reloadData()
+       //                     }
+       //                     else {
+       //                         self.showError()
+       //                     }
+       //                     Spinner.stop()
+       //                 }
+       //             })
+       //         }
+       //         else {
+       //             self.showError()
+       //         }
+       //
+       //         self.usernameTitle.title = self.user!.username
+       //         self.photosCollectionView.register(cellType: PhotoCollectionViewCell.self)
+       //         self.photosCollectionView.register(viewType: HeaderCollectionViewCell.self, kind: UICollectionElementKindSectionHeader)
+       //
+       //         self.photosCollectionView.delegate = self
+       //         self.photosCollectionView.dataSource = self
+       //         self.photosCollectionView.reloadData()
+       //
+       //     }
+       // })
+    
+    @objc func logoutTapped() {
+        logout()
+        
+        let storyboard: UIStoryboard = UIStoryboard(name: "Main", bundle: NSBundle.mainBundle())
+        let authorizationViewController: AuthorizationViewController = storyboard.instantiateViewControllerWithIdentifier("authorizationVC") as? AuthorizationViewController
+        let navigationController = self.navigationController?
+        navigationController.setViewControllers([authorizationViewController], animated: true)
+        
+        //self.navigationController?.setViewControllers([AuthorizationViewController], animated: true)
+        self.navigationController?.popToRootViewController(animated: true)
+    }
+    
+    private func addLogoutButton() {
+        let logoutButton = UIBarButtonItem(title: "Log out", style: .plain, target: self, action: #selector(logoutTapped))
+        self.navigationItem.rightBarButtonItem = logoutButton
     }
     
 }

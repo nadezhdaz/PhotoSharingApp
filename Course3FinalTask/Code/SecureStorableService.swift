@@ -8,10 +8,12 @@
 
 import UIKit
 
-protocol SecureStorable {
-    associatedtype Data
+/*protocol SecureStorable: class {
+    //associatedtype Data
     
-    func get(completionHandler: (Result<Data>) -> Void)
+    var networkService: NetworkService() { get }
+    var keychainService: KeychainService()
+    
     func login(login: String, password: String)
     func logout()
     func checkToken() -> String?
@@ -22,7 +24,7 @@ protocol SecureStorable {
     func getFollowers(userID: String) -> [User?]
     func getFollowingUsers(userID: String) -> [User?]
     func getPostsOfUser(userID: String) -> [Post?]
-    func getFeed(userID: String) -> [Post?]
+    func getFeed() -> [Post?]
     func getPost(postID: String) -> Post?
     func likePost(postID: String) -> Post?
     func unlikePost(postID: String) -> Post?
@@ -31,25 +33,8 @@ protocol SecureStorable {
 }
 
 extension SecureStorable {
-    var networkService = NetworkService()
-    var keychainService = KeychainService()
-    
-    func logout() {
-        guard let token = keychainService.readToken(server: KeychainService.server) else {
-            print("Cannot read token from keychain")
-            return
-        }
-        networkService.signOutRequest(token: token, completion: { [weak self] errorMessage in
-            if errorMessage != nil {
-                keychainService.deleteToken(server: KeychainService.server)
-                showError(with: errorMessage)
-            }
-            else {
-                showError()
-            }
-            
-        })
-    }
+    //var networkService = NetworkService()
+    //var keychainService = KeychainService()
     
     func login(login: String, password: String) {
         networkService.signInRequest(login: login, password: password, completion: { [weak self] token, errorMessage in
@@ -71,6 +56,24 @@ extension SecureStorable {
         })
         
     }
+    
+    func logout() {
+        guard let token = keychainService.readToken(server: KeychainService.server) else {
+            print("Cannot read token from keychain")
+            return
+        }
+        networkService.signOutRequest(token: token, completion: { [weak self] errorMessage in
+            if errorMessage != nil {
+                keychainService.deleteToken(server: KeychainService.server)
+                showError(with: errorMessage)
+            }
+            else {
+                showError()
+            }
+            
+        })
+    }
+    
     
     func checkToken() -> String? {
         guard let token = keychainService.readToken(server: KeychainService.server) else {
@@ -111,11 +114,12 @@ extension SecureStorable {
         
     }
     
-    func getUserInfo() -> User? {
+    func getUserInfo(userID: String) -> User? {
         let token = checkToken()
+        let userID = userID
         var user: User?
         
-        networkService.userInfoRequest(token: token, completion: { [weak self] user, errorMessage in
+        networkService.userInfoRequest(token: token, userID: userID, completion: { [weak self] user, errorMessage in
             if user = user {
                 return user
             }
@@ -218,12 +222,11 @@ extension SecureStorable {
         })
     }
     
-    func getFeed(userID: String) -> [Post?] {
+    func getFeed() -> [Post?] {
            let token = checkToken()
-           let userID = userID
            var feed: [Post?]
            
-           networkService.getFeedRequest(token: token, userID: userID, completion: { [weak self] posts, errorMessage in
+           networkService.getFeedRequest(token: token, completion: { [weak self] posts, errorMessage in
                if feed = posts {
                    return feed //posts
                }
@@ -327,5 +330,5 @@ extension SecureStorable {
         })
     }
     
-}
+}*/
 

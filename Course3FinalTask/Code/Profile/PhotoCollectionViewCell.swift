@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import DataProvider
 
 class PhotoCollectionViewCell: UICollectionViewCell {
     @IBOutlet private weak var pictureImageView: UIImageView!

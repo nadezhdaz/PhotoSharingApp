@@ -5,7 +5,6 @@
 //
 
 import UIKit
-import DataProvider
 
 class FeedTableViewCell: UITableViewCell {
     
@@ -49,8 +48,8 @@ class FeedTableViewCell: UITableViewCell {
     
     let defaultTintColor = UIColor(red: 0.0, green: 122/255, blue: 1.0, alpha: 1)
     var currentPost: Post?
-    var postID: DataProvider.Post.Identifier = ""
-    var authorID: DataProvider.User.Identifier = ""
+    var postID = "" //: Post.id?
+    var authorID = "" //: User.id = ""
     var likeButtonTapHandler: (() -> Void)?
     var profileTapHandler: (() -> Void)?
     var likesCounterTapHandler: (() -> Void)?
@@ -58,7 +57,7 @@ class FeedTableViewCell: UITableViewCell {
     public func setPost(_ post: Post) {
         currentPost = post
         postID = post.id
-        authorID = post.author
+        authorID = post.authorID
         avatarButton.setImage(post.authorAvatar, for: .normal)
         usernameLabel.text = post.authorUsername
         dateLabel.text = postTime(post)

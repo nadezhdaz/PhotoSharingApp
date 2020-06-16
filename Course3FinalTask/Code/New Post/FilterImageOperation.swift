@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import DataProvider
 
 class FilterImageOperation: Operation {
     

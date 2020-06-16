@@ -76,8 +76,8 @@ class KeychainService {
     
     func deleteToken(server: String) -> Bool {
         let item: [String: Any] = [kSecClass as String: kSecClassInternetPassword,
-        kSecAttrServer as String: server,
-        kSecAttrAccount as String: account]
+        kSecAttrServer as String: server]
+        //kSecAttrAccount as String: account]
         let status = SecItemDelete(item as CFDictionary)
         return status == noErr
     }

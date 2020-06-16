@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import DataProvider
 
 class HeaderCollectionViewCell: UICollectionReusableView {
     @IBOutlet weak var avatarImageView: UIImageView!
@@ -30,7 +29,7 @@ class HeaderCollectionViewCell: UICollectionReusableView {
         followButtonTapHandler?()
     }
     
-    var authorID: DataProvider.User.Identifier = ""
+    var authorID = ""//: User.id = ""
     var followButtonTapHandler: (() -> Void)?
     var followersLabelTapHandler: (() -> Void)?
     var followingLabelTapHandler: (() -> Void)?
