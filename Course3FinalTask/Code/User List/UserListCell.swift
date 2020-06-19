@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import Kingfisher
 
 class UserListCell: UITableViewCell {
     @IBOutlet weak var avatarImageView: UIImageView!
@@ -14,7 +15,7 @@ class UserListCell: UITableViewCell {
     
     
     func setUser(_ user: User) {
-        avatarImageView.image = user.avatar
+        avatarImageView.kf.setImage(with: user.avatar)
         fullnameLabel.text = user.fullName
     }
 }

@@ -19,13 +19,14 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
    func login(login: String, password: String) {
        networkService.signInRequest(login: login, password: password, completion: { [weak self] token, errorMessage in
            if let newToken = token {
-               self?.keychainService.saveToken(account: login, token: newToken)
+            self?.keychainService.saveToken(account: login, token: newToken)
+            print("token saved")
            }
            else if let message = errorMessage  {
-            self?.showError(with: message)
+            AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
         }
            
        })
@@ -40,41 +41,41 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
        networkService.signOutRequest(token: token, completion: { [weak self] errorMessage in
            if let message = errorMessage {
             self?.keychainService.deleteToken(server: KeychainService.server)
-            self?.showError(with: message)
+            AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
            }
            
        })
    }
    
    
-    func checkToken(completion: @escaping (String?) -> ()) {
+    func checkToken(completion: @escaping (Bool) -> ()) {
     guard let token = keychainService.readToken(server: KeychainService.server) else {
         print("Cannot read token from keychain")
-        showError()
+        AlertController.showError()
         return
     }
     
     networkService.checkTokenRequest(token: token, completion: { [weak self] checkResult, errorMessage in
            if checkResult {
-            completion(token)
+            completion(true)
            }
            else if let message = errorMessage {
-            self?.showError(with: message)
+            AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
            }
            
        })
    }
    
-   func getCurrentUserInfo(completion: @escaping (User?) -> ()) {
+   func getCurrentUserInfo(completion: @escaping (User) -> ()) {
     guard let token = keychainService.readToken(server: KeychainService.server) else {
         print("Cannot read token from keychain")
-        showError()
+        AlertController.showError()
         return
     }
        //var user: User?
@@ -83,20 +84,20 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let user = currentUser {
             completion(user)
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
        
    }
    
-   func getUserInfo(userID: String, completion: @escaping (User?) -> ()) {
+   func getUserInfo(userID: String, completion: @escaping (User) -> ()) {
        guard let token = keychainService.readToken(server: KeychainService.server) else {
            print("Cannot read token from keychain")
-           showError()
+           AlertController.showError()
         return
        }
        let userID = userID
@@ -106,19 +107,19 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let user = user {
                completion(user)
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
    }
    
-   func followUser(userID: String, completion: @escaping (User?) -> ()) {
+   func followUser(userID: String, completion: @escaping (User) -> ()) {
        guard let token = keychainService.readToken(server: KeychainService.server) else {
            print("Cannot read token from keychain")
-           showError()
+           AlertController.showError()
         return
        }
        let userID = userID
@@ -128,19 +129,19 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let user = user {
                completion(user)
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
    }
    
-   func unfollowUser(userID: String, completion: @escaping (User?) -> ()) {
+   func unfollowUser(userID: String, completion: @escaping (User) -> ()) {
        guard let token = keychainService.readToken(server: KeychainService.server) else {
            print("Cannot read token from keychain")
-           showError()
+           AlertController.showError()
         return
        }
        let userID = userID
@@ -150,19 +151,19 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let user = user {
                completion(user)
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
    }
    
-   func getFollowers(userID: String, completion: @escaping ([User]?) -> ()) {
+   func getFollowers(userID: String, completion: @escaping ([User]) -> ()) {
        guard let token = keychainService.readToken(server: KeychainService.server) else {
            print("Cannot read token from keychain")
-           showError()
+           AlertController.showError()
         return
        }
        let userID = userID
@@ -172,19 +173,19 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let followers = users {
             completion(followers) //users
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
    }
    
-   func getFollowingUsers(userID: String, completion: @escaping ([User]?) -> ()) {
+   func getFollowingUsers(userID: String, completion: @escaping ([User]) -> ()) {
        guard let token = keychainService.readToken(server: KeychainService.server) else {
            print("Cannot read token from keychain")
-           showError()
+           AlertController.showError()
         return
        }
        let userID = userID
@@ -194,19 +195,19 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let followingUsers = users {
                completion(followingUsers) //users
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
    }
    
-   func getPostsOfUser(userID: String, completion: @escaping ([Post]?) -> ()) {
+   func getPostsOfUser(userID: String, completion: @escaping ([Post]) -> ()) {
        guard let token = keychainService.readToken(server: KeychainService.server) else {
            print("Cannot read token from keychain")
-           showError()
+           AlertController.showError()
         return
        }
        let userID = userID
@@ -216,19 +217,19 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let postsOfUser = posts {
                completion(postsOfUser) //posts
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
    }
    
-   func getFeed(completion: @escaping ([Post]?) -> ()) {
+   func getFeed(completion: @escaping ([Post]) -> ()) {
     guard let token = keychainService.readToken(server: KeychainService.server) else {
         print("Cannot read token from keychain")
-        showError()
+        AlertController.showError()
         return
     }
           //var feed: [Post?]
@@ -237,19 +238,19 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
               if let feed = posts {
                   completion(feed) //posts
               }
-              if let message = errorMessage {
-              self?.showError(with: message)
+              else if let message = errorMessage {
+              AlertController.showError(with: message)
               }
               else {
-                self?.showError()
+                AlertController.showError()
                   }
           })
       }
    
-   func getPost(postID: String, completion: @escaping (Post?) -> ()) {
+   func getPost(postID: String, completion: @escaping (Post) -> ()) {
     guard let token = keychainService.readToken(server: KeychainService.server) else {
         print("Cannot read token from keychain")
-        showError()
+        AlertController.showError()
         return
     }
        let postID = postID
@@ -259,19 +260,19 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let post = receivedPost {
                completion(post)
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
    }
    
-   func likePost(postID: String, completion: @escaping (Post?) -> ()) {
+   func likePost(postID: String, completion: @escaping (Post) -> ()) {
     guard let token = keychainService.readToken(server: KeychainService.server) else {
         print("Cannot read token from keychain")
-        showError()
+        AlertController.showError()
         return
     }
        let postID = postID
@@ -281,19 +282,19 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let post = likedPost {
                completion(post)
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
    }
    
-   func unlikePost(postID: String, completion: @escaping (Post?) -> ()) {
+   func unlikePost(postID: String, completion: @escaping (Post) -> ()) {
     guard let token = keychainService.readToken(server: KeychainService.server) else {
         print("Cannot read token from keychain")
-        showError()
+        AlertController.showError()
         return
     }
        let postID = postID
@@ -303,19 +304,19 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let post = unlikedPost {
                completion(post)
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
    }
    
-   func getLikesForPost(postID: String, completion: @escaping ([User]?) -> ()) {
+   func getLikesForPost(postID: String, completion: @escaping ([User]) -> ()) {
     guard let token = keychainService.readToken(server: KeychainService.server) else {
         print("Cannot read token from keychain")
-        showError()
+        AlertController.showError()
         return
     }
        let postID = postID
@@ -325,19 +326,19 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let users = usersLikedPost {
                completion(users)
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
    }
    
-   func createPost(image: UIImage, description: String, completion: @escaping (Post?) -> ()) {
+   func createPost(image: UIImage, description: String, completion: @escaping (Post) -> ()) {
     guard let token = keychainService.readToken(server: KeychainService.server) else {
         print("Cannot read token from keychain")
-        self.showError()
+        AlertController.showError()
         return
     }
        let image = image
@@ -348,11 +349,11 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
            if let post = createdPost {
                completion(post)
            }
-           if let message = errorMessage {
-           self?.showError(with: message)
+           else if let message = errorMessage {
+           AlertController.showError(with: message)
            }
            else {
-            self?.showError()
+            AlertController.showError()
                }
        })
    }}

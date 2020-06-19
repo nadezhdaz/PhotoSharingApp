@@ -74,8 +74,10 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         if !(post.currentUserLikesThisPost) {
             
             cell.bigLikeAnimation()
-            networkHandler.likePost(postID: cell.postID)
-            cell.updateLikes(post)
+            networkHandler.likePost(postID: cell.postID, completion: { post in
+                cell.updateLikes(post)
+            })
+            //cell.updateLikes(post)
             /*DataProviders.shared.postsDataProvider.likePost(with: cell.postID, queue: self.queue, handler: { [weak self] incomingPost in
                  guard let self = self else { return }
                 if incomingPost != nil {
@@ -89,8 +91,10 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
             })*/
             
         } else {
-            networkHandler.unlikePost(postID: cell.postID)
-            cell.updateLikes(post)
+            networkHandler.unlikePost(postID: cell.postID, completion: { post in
+                cell.updateLikes(post)
+            })
+            //cell.updateLikes(post)
            /* DataProviders.shared.postsDataProvider.unlikePost(with: cell.postID, queue: self.queue, handler: { [weak self] incomingPost in
                  guard let self = self else { return }
                 if incomingPost != nil {
@@ -106,14 +110,19 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         }
         
         //DispatchQueue.main.async {
-        guard let incomingPosts = networkHandler.getFeed() else {
-                showError()
-                return
+        networkHandler.getFeed(completion: { [weak self] incomingPosts in
+             guard let self = self else { return }
+                            DispatchQueue.main.async {
+                                 Posts.list = incomingPosts
+                                 self.feedTableView.reloadData()
+                                 self.feedTableView.layoutIfNeeded()
+                                
             }
+        })
             
-            Posts.list = incomingPosts
-            self.feedTableView.reloadData()
-            self.feedTableView.layoutIfNeeded()
+            //Posts.list = incomingPosts
+            //self.feedTableView.reloadData()
+            //self.feedTableView.layoutIfNeeded()
        // DataProviders.shared.postsDataProvider.feed(queue: self.queue, handler: { [weak self] incomingPosts in
        //     guard let self = self else { return }
        //                    DispatchQueue.main.async {
@@ -136,7 +145,11 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
     func feedToProfileSegue(_ cell: FeedTableViewCell) {
         guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "profileVC") as? ProfileViewController else { return }
         Spinner.start()
-        destinationController.user = getUserInfo(userID: cell.authorID)
+        networkHandler.getUserInfo(userID: cell.authorID, completion: { user in
+            DispatchQueue.main.async {
+                destinationController.user = user
+            }
+        })
     //    DataProviders.shared.usersDataProvider.user(with: cell.authorID, queue: self.queue, handler: { [weak self] incomingUser in
     //        DispatchQueue.main.async {
     //        if incomingUser != nil {
@@ -155,7 +168,11 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "userListVC") as? UserListController else { return }
         destinationController.listIdentifier = "likes"
         Spinner.start()
-        destinationController.user = getUserInfo(userID: cell.authorID)
+        networkHandler.getUserInfo(userID: cell.authorID, completion: { user in
+            DispatchQueue.main.async {
+                destinationController.user = user
+            }
+        })
         /*DataProviders.shared.usersDataProvider.user(with: cell.authorID, queue: self.queue, handler: { [weak self] incomingUser in
             DispatchQueue.main.async {
             if incomingUser != nil {
@@ -166,7 +183,11 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
                 }
             }
         })*/
-        destinationController.post = getPost(postID: cell.postID)
+        networkHandler.getPost(postID: cell.authorID, completion: { post in
+            DispatchQueue.main.async {
+                destinationController.post = post
+            }
+        })
         /*Spinner.start()
         DataProviders.shared.postsDataProvider.post(with: cell.postID, queue: self.queue, handler: { [weak self] incomingPost in
             DispatchQueue.main.async {
@@ -185,7 +206,15 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
     func setupPosts() {
         Spinner.start()
         
-        DispatchQueue.main.async {
+        networkHandler.getFeed(completion: { [weak self] feed in
+            DispatchQueue.main.async {
+                Posts.list = feed
+                self?.feedTableView.reloadData()
+                self?.feedTableView.layoutIfNeeded()
+                Spinner.stop()
+            }
+        })
+        /*DispatchQueue.main.async {
             guard let incomingPosts = getFeed() else {
                 showError()
             }
@@ -194,7 +223,7 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
             self?.feedTableView.reloadData()
             self?.feedTableView.layoutIfNeeded()
             Spinner.stop()
-        }
+        }*/
     }
     
  //   Spinner.start()

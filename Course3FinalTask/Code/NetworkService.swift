@@ -28,11 +28,15 @@ struct Post: Codable {
     var authorID: String
     var description: String
     var image: URL
-    var createdTime: Int
+    var createdTime: Date//Int
     var currentUserLikesThisPost: Bool
     var likedByCount: Int
     var authorUsername: String
     var authorAvatar: URL
+}
+
+struct Token: Codable {
+    var token: String
 }
 
 /// Runs query data task
@@ -42,11 +46,9 @@ class NetworkService {
     //
     let defaultSession = URLSession(configuration: .default)
     let scheme = "http"
-    let host = "localhost:8080"
+    let host = "localhost"
+    let port = 8080
     let hostPath = "http://localhost:8080"
-    let currentUserInfoPath = "/users/me"
-    let usersInfoPath = "/users"
-    let postsInfoPath = "/posts"
     let jsonHeaders = [
         "Content-Type" : "application/json"
     ]
@@ -56,7 +58,6 @@ class NetworkService {
     
     var dataTask: URLSessionDataTask?
     //var errorMessage = ""
-    var errorText = ""
     
     //
     // MARK: - Type Alias
@@ -70,60 +71,28 @@ class NetworkService {
     
 
     func signInRequest(login: String, password: String, completion: @escaping (String?, String?) -> Void) {
-        let login = login
-        let password = password
-        let loginString = "\(login):\(password)"
-        var token: String?
+        let userCredentials = ["login": login, "password": password]
+        var token: Token?
         var errorMessage = ""
-        
-        guard let loginData = loginString.data(using: String.Encoding.utf8) else {
-            return
-        }
-        let base64LoginString = loginData.base64EncodedString()
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.queryItems = [
-            URLQueryItem(name: "login", value: login),
-            URLQueryItem(name: "password", value: password)
-        ]
+        urlComponents.port = port
+        urlComponents.path = "/signin"
         
-            guard let url = urlComponents.url else {
-                return
-            }
-        
-        var request = URLRequest(url: url)
-        request.allHTTPHeaderFields = jsonHeaders
-        
-        request.httpMethod = "POST"
-        //request.httpBody = Data(query.utf8)
-        
-        /*let url = URL(string: hostPath)!
-        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
-
-        components.queryItems = [
-            URLQueryItem(name: "login", value: login),
-            URLQueryItem(name: "password", value: password)
-        ]
-
-        let query = components.url!.query
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.httpBody = Data(query.utf8)*/
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
         
-        //request.httpMethod = "POST"
-        //request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        //request.addValue("application/json", forHTTPHeaderField: "Accept")
-        
-        //let parameters = ["username": account, "password": password]
-        
-        //do {
-        //    request.httpBody = try JSONSerialization.data(withJSONObject: parameters, options: .prettyPrinted)
-        //} catch let error {
-        //    print(error.localizedDescription)
-        //}
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: userCredentials, options: .prettyPrinted)
+        } catch let error {
+            print(error.localizedDescription)
+        }
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -131,33 +100,35 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let data = data,
+            if let response = response as? HTTPURLResponse,
+            response.statusCode == 422 {
+                errorMessage = "Unprocessable"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+                response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
+            } else if let data = data,
                 let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
                 
                  do {
                     let decoder = JSONDecoder()
-                    //decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    token = try decoder.decode(String.self, from: data)
-                    //token = token
+                    token = try decoder.decode(Token.self, from: data)
                  } catch {
                     debugPrint(error)
                 }
-                completion(token, nil)
+                completion(token?.token, nil)
             }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 422 {
-                errorMessage = "Unprocessable"
-                completion(nil, errorMessage)
-            }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
-            }
+            
+            let data = data
+            let response = response as? HTTPURLResponse
+            let error = error as? Error
+            print(response?.statusCode)
             
         }
         
@@ -168,14 +139,17 @@ class NetworkService {
         let token = token
         var errorMessage = ""
         
-        let url = URL(string: hostPath)!
-        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
-
-        components.queryItems = [
+        var urlComponents = URLComponents()
+        urlComponents.scheme = scheme
+        urlComponents.host = host
+        urlComponents.port = port
+        urlComponents.path = "/signout"
+        
+        guard let url = urlComponents.url else { return }
+        
+        urlComponents.queryItems = [
             URLQueryItem(name: "token", value: token)
         ]
-
-        //let query = components.url!.query
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -189,16 +163,17 @@ class NetworkService {
             }
             
             if let response = response as? HTTPURLResponse,
-                response.statusCode == 200 {
-                print("User signed out")
-                completion(nil)
-            } else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
                 errorMessage = "Bad request"
                 completion(errorMessage)
-            } else {
-                errorMessage = "Unknown error"
+            } else if let response = response as? HTTPURLResponse,
+                response.statusCode != 200 {
+                errorMessage = "Transfer error"
                 completion(errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+                response.statusCode == 200 {
+                print("User signed out")
+                completion(nil)
             }
             
         }
@@ -210,14 +185,16 @@ class NetworkService {
         let token = token
         var errorMessage = ""
         
-        let url = URL(string: hostPath)!
-        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
-
-        components.queryItems = [
+        var urlComponents = URLComponents()
+        urlComponents.scheme = scheme
+        urlComponents.host = host
+        urlComponents.port = port
+        urlComponents.path = "/checkToken"
+        urlComponents.queryItems = [
             URLQueryItem(name: "token", value: token)
         ]
-
-        //let query = components.url!.query
+        
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -231,16 +208,17 @@ class NetworkService {
             }
             
             if let response = response as? HTTPURLResponse,
-                response.statusCode == 200 {
-                print("Token is valid")
-                completion(true, nil)
-            } else if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
                 errorMessage = "Bad request"
                 completion(false, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
+            } else if let response = response as? HTTPURLResponse,
+                response.statusCode != 200 {
+                errorMessage = "Transfer error"
                 completion(false, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+                response.statusCode == 200 {
+                print("Token is valid")
+                completion(true, nil)
             }
             
         }
@@ -252,36 +230,20 @@ class NetworkService {
         let token = token
         var user: User?
         var errorMessage = ""
-    
-    //let url = URL(string: hostPath)!
-    //var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
-
-    //components.queryItems = [
-    //    URLQueryItem(name: "token", value: token)
-    //]
-
-    //let query = components.url!.query
-    
-    //var request = URLRequest(url: url)
-    //request.httpMethod = "GET"
-    ////request.httpBody = Data(query.utf8)
-    //request.setValue(token, forHTTPHeaderField: "header")
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = currentUserInfoPath
+        urlComponents.port = port
+        urlComponents.path = "/users/me"
         urlComponents.queryItems = [
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+       guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
-        
         request.httpMethod = "GET"
         //request.httpBody = Data(query.utf8)
         
@@ -291,8 +253,14 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+                response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -312,15 +280,6 @@ class NetworkService {
                 }
                 completion(user, nil)
                 
-            }
-                
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
             }
             
         }
@@ -337,14 +296,13 @@ class NetworkService {
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(usersInfoPath)/\(id)"
+        urlComponents.port = port
+        urlComponents.path = "/users/\(id)"
         urlComponents.queryItems = [
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
@@ -358,10 +316,19 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
-            } else if
-                let data = data,
+                if let response = response as? HTTPURLResponse,
+                response.statusCode == 400 {
+                    errorMessage = "Bad request"
+                    completion(nil, errorMessage)
+                } else if let response = response as? HTTPURLResponse,
+                    response.statusCode == 404 {
+                        errorMessage = "Not found"
+                        completion(nil, errorMessage)
+                } else if let response = response as? HTTPURLResponse,
+                    response.statusCode != 200 {
+                    errorMessage = "Transfer error"
+                    completion(nil, errorMessage)
+                } else if let data = data,
                 let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
                 
@@ -378,19 +345,6 @@ class NetworkService {
                 }
                 completion(user, nil)
                 
-            }
-                else if let response = response as? HTTPURLResponse,
-                response.statusCode == 404 {
-                    errorMessage = "Not found"
-                    completion(nil, errorMessage)
-            }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
             }
             
         }
@@ -400,28 +354,36 @@ class NetworkService {
     
     func followUserRequest(token: String, userID: String, completion: @escaping (User?, String?) -> Void) {
         let token = token
-        let id = userID
+        //let id = userID
+        let id = ["userID": userID]
         var user: User?
         var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(usersInfoPath)/follow"
+        urlComponents.port = port
+        urlComponents.path = "/users/follow"
         urlComponents.queryItems = [
-            URLQueryItem(name: "userID", value: id),
+            //URLQueryItem(name: "userID", value: id),
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
         
         request.httpMethod = "POST"
         //request.httpBody = Data(query.utf8)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: id, options: .prettyPrinted)
+        } catch let error {
+            print(error.localizedDescription)
+        }
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -429,8 +391,23 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+                response.statusCode == 404 {
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+                    response.statusCode == 406 {
+                        errorMessage = "Not acceptable"
+                        completion(nil, errorMessage)
+                }
+            else if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -449,24 +426,6 @@ class NetworkService {
                 }
                 completion(user, nil)
                 
-            }
-                else if let response = response as? HTTPURLResponse,
-                response.statusCode == 404 {
-                    errorMessage = "Not found"
-                    completion(nil, errorMessage)
-            }
-                else if let response = response as? HTTPURLResponse,
-                    response.statusCode == 406 {
-                        errorMessage = "Not acceptable"
-                        completion(nil, errorMessage)
-                }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
             }
             
         }
@@ -483,15 +442,13 @@ class NetworkService {
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(usersInfoPath)/unfollow"
+        urlComponents.path = "users/unfollow"
         urlComponents.queryItems = [
             URLQueryItem(name: "userID", value: id),
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
@@ -505,8 +462,23 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+                response.statusCode == 404 {
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+                    response.statusCode == 406 {
+                        errorMessage = "Not acceptable"
+                        completion(nil, errorMessage)
+                
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -526,24 +498,6 @@ class NetworkService {
                 completion(user, nil)
                 
             }
-                else if let response = response as? HTTPURLResponse,
-                response.statusCode == 404 {
-                    errorMessage = "Not found"
-                    completion(nil, errorMessage)
-            }
-                else if let response = response as? HTTPURLResponse,
-                    response.statusCode == 406 {
-                        errorMessage = "Not acceptable"
-                        completion(nil, errorMessage)
-                }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
-            }
             
         }
         
@@ -559,14 +513,13 @@ class NetworkService {
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(usersInfoPath)/\(id)/followers"
+        urlComponents.port = port
+        urlComponents.path = "/users/\(id)/followers"
         urlComponents.queryItems = [
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
@@ -580,8 +533,18 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+                response.statusCode == 404 {
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -601,19 +564,6 @@ class NetworkService {
                 completion(followers, nil)
                 
             }
-                else if let response = response as? HTTPURLResponse,
-                response.statusCode == 404 {
-                    errorMessage = "Not found"
-                    completion(nil, errorMessage)
-            }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
-            }
             
         }
         
@@ -629,14 +579,13 @@ class NetworkService {
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(usersInfoPath)/\(id)/following"
+        urlComponents.port = port
+        urlComponents.path = "users/\(id)/following"
         urlComponents.queryItems = [
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
@@ -650,8 +599,18 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+                response.statusCode == 404 {
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -671,19 +630,6 @@ class NetworkService {
                 completion(followingUsers, nil)
                 
             }
-                else if let response = response as? HTTPURLResponse,
-                response.statusCode == 404 {
-                    errorMessage = "Not found"
-                    completion(nil, errorMessage)
-            }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
-            }
             
         }
         
@@ -699,14 +645,13 @@ class NetworkService {
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(usersInfoPath)/\(id)/posts"
+        urlComponents.port = port
+        urlComponents.path = "users/\(id)/posts"
         urlComponents.queryItems = [
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
@@ -720,8 +665,18 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+                response.statusCode == 404 {
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -740,19 +695,6 @@ class NetworkService {
                 }
                 completion(posts, nil)
                 
-            }
-                else if let response = response as? HTTPURLResponse,
-                response.statusCode == 404 {
-                    errorMessage = "User not found"
-                    completion(nil, errorMessage)
-            }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
             }
             
         }
@@ -768,14 +710,13 @@ class NetworkService {
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(postsInfoPath)/feed"
+        urlComponents.port = port
+        urlComponents.path = "/posts/feed"
         urlComponents.queryItems = [
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
@@ -789,8 +730,14 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -810,15 +757,7 @@ class NetworkService {
                 completion(posts, nil)
                 
             }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
-            }
-            
+                        
         }
         
         task.resume()
@@ -833,14 +772,13 @@ class NetworkService {
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(postsInfoPath)/\(id)"
+        urlComponents.port = port
+        urlComponents.path = "/posts/\(id)"
         urlComponents.queryItems = [
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
@@ -854,8 +792,18 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+                response.statusCode == 404 {
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -874,19 +822,6 @@ class NetworkService {
                 }
                 completion(post, nil)
                 
-            }
-                else if let response = response as? HTTPURLResponse,
-                    response.statusCode == 404 {
-                        errorMessage = "Not found"
-                        completion(nil, errorMessage)
-                }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error:"
-                completion(nil, errorMessage)
             }
             
         }
@@ -903,15 +838,14 @@ class NetworkService {
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(postsInfoPath)/like"
+        urlComponents.port = port
+        urlComponents.path = "/posts/like"
         urlComponents.queryItems = [
             URLQueryItem(name: "postID", value: id),
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
@@ -925,8 +859,18 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+                response.statusCode == 404 {
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -945,19 +889,6 @@ class NetworkService {
                 }
                 completion(post, nil)
                 
-            }
-                else if let response = response as? HTTPURLResponse,
-                    response.statusCode == 404 {
-                        errorMessage = "Not found"
-                        completion(nil, errorMessage)
-                }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
             }
             
         }
@@ -974,15 +905,14 @@ class NetworkService {
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(postsInfoPath)/unlike"
+        urlComponents.port = port
+        urlComponents.path = "/posts/unlike"
         urlComponents.queryItems = [
             URLQueryItem(name: "postID", value: id),
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
@@ -996,8 +926,18 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+                response.statusCode == 404 {
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -1017,19 +957,6 @@ class NetworkService {
                 completion(post, nil)
                 
             }
-                else if let response = response as? HTTPURLResponse,
-                    response.statusCode == 404 {
-                        errorMessage = "Not found"
-                        completion(nil, errorMessage)
-                }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
-            }
             
         }
         
@@ -1045,15 +972,13 @@ class NetworkService {
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(postsInfoPath)/\(id)/likes"
+        urlComponents.port = port
+        urlComponents.path = "posts/\(id)/likes"
         urlComponents.queryItems = [
             URLQueryItem(name: "header", value: token)
         ]
         
-        
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
@@ -1067,8 +992,18 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+                response.statusCode == 404 {
+                    errorMessage = "Not found"
+                    completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -1087,19 +1022,6 @@ class NetworkService {
                 }
                 completion(users, nil)
                 
-            }
-                else if let response = response as? HTTPURLResponse,
-                    response.statusCode == 404 {
-                        errorMessage = "Not found"
-                        completion(nil, errorMessage)
-                }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
             }
             
         }
@@ -1123,16 +1045,15 @@ class NetworkService {
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "\(postsInfoPath)/create"
+        urlComponents.port = port
+        urlComponents.path = "posts/create"
         urlComponents.queryItems = [
             URLQueryItem(name: "image", value: base64ImageString),
             URLQueryItem(name: "description", value: description),
             URLQueryItem(name: "header", value: token)
         ]
         
-            guard let url = urlComponents.url else {
-                return
-            }
+        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         //request.allHTTPHeaderFields = token
@@ -1146,8 +1067,14 @@ class NetworkService {
                 self?.dataTask = nil
             }
             
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
+            if let response = response as? HTTPURLResponse,
+            response.statusCode == 400 {
+                errorMessage = "Bad request"
+                completion(nil, errorMessage)
+            } else if let response = response as? HTTPURLResponse,
+            response.statusCode != 200 {
+                errorMessage = "Transfer error"
+                completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
@@ -1166,14 +1093,6 @@ class NetworkService {
                 }
                 completion(post, nil)
                 
-            }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
-                completion(nil, errorMessage)
-            } else {
-                errorMessage = "Unknown error"
-                completion(nil, errorMessage)
             }
             
         }

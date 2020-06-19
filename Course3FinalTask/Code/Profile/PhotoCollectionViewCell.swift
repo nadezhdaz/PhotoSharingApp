@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Kingfisher
 
 class PhotoCollectionViewCell: UICollectionViewCell {
     @IBOutlet private weak var pictureImageView: UIImageView!
@@ -16,7 +17,7 @@ class PhotoCollectionViewCell: UICollectionViewCell {
     }
     
     func setPicture(_ post: Post) {
-        pictureImageView.image = post.image
+        pictureImageView.kf.setImage(with: post.image)
     }
     
     func configure(with photo: UIImage) {

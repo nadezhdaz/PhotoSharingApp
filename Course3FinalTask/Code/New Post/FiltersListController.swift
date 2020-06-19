@@ -118,7 +118,9 @@ class FiltersListController: UIViewController, UICollectionViewDataSource, UICol
             
             for filter in self.filters {
                 
-                let imagePreview = self.imagesPreviewArray[self.imageIndex!]
+                //let imagePreview = self.imagesPreviewArray[self.imageIndex!]
+                let imageName = self.imagesPreviewArray[self.imageIndex!]
+                let imagePreview = UIImage(contentsOfFile: imageName)
                 let operation = FilterImageOperation(inputImage: imagePreview, filter: filter)
                 
                 operation.completionBlock = {

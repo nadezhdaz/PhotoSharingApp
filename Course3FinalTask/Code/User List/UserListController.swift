@@ -52,34 +52,44 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
     }
     
     private func setupList() {
+        //var user: User
+        //var currentUser: User
+        //var post = self.post
         
         DispatchQueue.main.async {
-            if self.user == nil {
-                self.networkHandler.getCurrentUserInfo(completion: { [weak self] user in
-                    self?.user = user })
-                }
-            
+            //var checkToken: Bool
+            //self.networkHandler.checkToken(completion: { result in
+             //   checkToken = result
+            //})
+            if self.user == nil  {
+                self.networkHandler.getCurrentUserInfo(completion: { currentUser in
+                    self.user = currentUser
+                })
+            }
             
             switch self.listIdentifier {
                 case "followers":
+                    guard let user = self.user else { return }
                     self.userListNavigationItem.title = "Followers"
-                    self.networkHandler.getFollowers(userID: self.user.id, completion: { [weak self] users in
+                    self.networkHandler.getFollowers(userID: user.id, completion: { [weak self] users in
                         self?.users = users
                     })
                     //users = getFollowers(userID: user?.id)
                     self.userListTableView.reloadData()
                     Spinner.stop()
                 case "following":
+                    guard let user = self.user else { return }
                     self.userListNavigationItem.title = "Following"
-                    self.networkHandler.getFollowingUsers(userID: self.user?.id, completion: { [weak self] users in
+                    self.networkHandler.getFollowingUsers(userID: user.id, completion: { [weak self] users in
                         self?.users = users
                     })
                     //users = getFollowingUsers(userID: user?.id)
                     self.userListTableView.reloadData()
                     Spinner.stop()
                 case "likes":
+                    guard let post = self.post else { return }
                     self.userListNavigationItem.title = "Likes"
-                    self.networkHandler.getLikesForPost(userID: self.post?.id, completion: { [weak self] users in
+                    self.networkHandler.getLikesForPost(postID: post.id, completion: { [weak self] users in
                         self?.users = users
                     })
                     //users = getLikesForPost(postID: post?.id)
@@ -88,7 +98,7 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
                     
                 default:
                     print("List identifier error")
-                    self.showError()
+                    AlertController.showLocalError()
                 }
                 
             self.userListTableView.rowHeight = UITableViewAutomaticDimension

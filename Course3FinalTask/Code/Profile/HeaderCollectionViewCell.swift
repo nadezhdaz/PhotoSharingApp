@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Kingfisher
 
 class HeaderCollectionViewCell: UICollectionReusableView {
     @IBOutlet weak var avatarImageView: UIImageView!
@@ -37,7 +38,7 @@ class HeaderCollectionViewCell: UICollectionReusableView {
     
     public func setHeader(_ user: User, _ isCurrentUser: Bool)
     {
-        avatarImageView.image = user.avatar
+        avatarImageView.kf.setImage(with: user.avatar)
         avatarImageView.layer.cornerRadius = avatarImageView.frame.size.width / 2
         fullnameLabel.text = user.fullName
         fullnameLabel.sizeToFit()

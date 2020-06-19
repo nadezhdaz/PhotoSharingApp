@@ -30,14 +30,19 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let photoCell = newPhotoCollectionView.dequeueCell(of: PhotoCollectionViewCell.self, for: indexPath)
+        let imageName = photos[indexPath.row]
+        let image = UIImage(contentsOfFile: imageName)
         
-        photoCell.configure(with: photos[indexPath.row])
+        photoCell.configure(with: image!)
+        //photoCell.configure(with: photos[indexPath.row])
         
         return photoCell
     }
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let image = photos[indexPath.row]
+        let imageName = photos[indexPath.row]
+        let image = UIImage(contentsOfFile: imageName)
+        //let image = photos[indexPath.row]
         
         guard let destinationController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "filtersPreviewVC") as? FiltersListController else { return }
         guard let navigationController = navigationController  else { return }

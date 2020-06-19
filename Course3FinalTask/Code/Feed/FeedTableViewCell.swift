@@ -5,6 +5,7 @@
 //
 
 import UIKit
+import Kingfisher
 
 class FeedTableViewCell: UITableViewCell {
     
@@ -58,10 +59,10 @@ class FeedTableViewCell: UITableViewCell {
         currentPost = post
         postID = post.id
         authorID = post.authorID
-        avatarButton.setImage(post.authorAvatar, for: .normal)
+        avatarButton.kf.setImage(with: post.authorAvatar, for: .normal)
         usernameLabel.text = post.authorUsername
         dateLabel.text = postTime(post)
-        pictureImageView.image = post.image
+        pictureImageView.kf.setImage(with: post.image)
         likesCounterLabel.text = "Likes: \(post.likedByCount)"
         likeButton.tintColor = post.currentUserLikesThisPost ? defaultTintColor : UIColor.lightGray
         postTextLabel.text = post.description

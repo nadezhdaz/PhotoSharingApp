@@ -30,6 +30,7 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
     var currentUser: User?
     var isCurrentUserProfile: Bool = false
     var queue: DispatchQueue? = DispatchQueue(label: "com.myqueues.customQueue", qos: .userInteractive, attributes: .concurrent, autoreleaseFrequency: .inherit, target: .global(qos: .userInteractive))
+    var networkHandler = SecureNetworkHandler()
     
     // MARK: - UIViewController
     
@@ -90,14 +91,18 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
     }
     
     func followButtonHandler(_ view: HeaderCollectionViewCell) {
-        guard user != nil && currentUser != nil else { return }
+        guard let user = user, let currentUser = currentUser else { return }
         
-        if user?.currentUserFollowsThisUser {
-            unfollowUser(userID: user?.id)
-            user?.followedByCount -= 1
-            currentUser!.followsCount -= 1
-            user?.currentUserFollowsThisUser = false
-            view.updateFollows(user)
+        if user.currentUserFollowsThisUser {
+            self.networkHandler.unfollowUser(userID: user.id, completion: { [weak self] user in
+                guard let self = self else { return }
+                DispatchQueue.main.async {
+                    self.user!.followedByCount -= 1
+                    self.currentUser!.followsCount -= 1
+                    self.user!.currentUserFollowsThisUser = false
+                    view.updateFollows(user)
+                }
+            })
             /*DataProviders.shared.usersDataProvider.unfollow(user!.id, queue: self.queue, handler: { [weak self] incomingUser in
                 guard let self = self else { return }
                 DispatchQueue.main.async {
@@ -114,11 +119,15 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
             
         }
         else {
-            followUser(userID: user?.id)
-            user?.followedByCount += 1
-            currentUser!.followsCount += 1
-            user?.currentUserFollowsThisUser = false
-            view.updateFollows(user)
+            self.networkHandler.unfollowUser(userID: user.id, completion: { [weak self] user in
+                guard let self = self else { return }
+                DispatchQueue.main.async {
+                    self.user!.followedByCount += 1
+                    self.currentUser!.followsCount += 1
+                    self.user!.currentUserFollowsThisUser = true
+                    view.updateFollows(user)
+                }
+            })
             /*DataProviders.shared.usersDataProvider.follow(user!.id, queue: self.queue, handler: { [weak self] incomingUser in
                 guard let self = self else { return }
                 DispatchQueue.main.async {
@@ -140,7 +149,12 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "userListVC") as? UserListController else { return }
         destinationController.listIdentifier = "followers"
         Spinner.start()
-        destinationController.user = getUserInfo(userID: view.authorID)
+        networkHandler.getUserInfo(userID: view.authorID, completion: { user in
+            DispatchQueue.main.async {
+                destinationController.user = user
+            }
+        })
+        //destinationController.user = getUserInfo(userID: view.authorID)
         /*DataProviders.shared.usersDataProvider.user(with: view.authorID, queue: self.queue, handler: { [weak self] incomingUser in
             guard let self = self else { return }
             DispatchQueue.main.async {
@@ -160,7 +174,11 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "userListVC") as? UserListController else { return }
         destinationController.listIdentifier = "following"
         Spinner.start()
-        destinationController.user = getUserInfo(userID: view.authorID)
+        networkHandler.getUserInfo(userID: view.authorID, completion: { user in
+            DispatchQueue.main.async {
+                destinationController.user = user
+            }
+        })
         /*DataProviders.shared.usersDataProvider.user(with: view.authorID, queue: self.queue, handler: { [weak self] incomingUser in
             guard let self = self else { return }
             DispatchQueue.main.async {
@@ -179,28 +197,36 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
     private func setupUserPosts() {
         Spinner.start()
         
-        DispatchQueue.main.async {
-            if user == nil {
-                user = getCurrentUserInfo()
-                currentUser = user
-            }
-            if user?.id == currentUser?.id {
-                isCurrentUserProfile = true
+        self.networkHandler.getCurrentUserInfo(completion: { [weak self] currentUser in
+            DispatchQueue.main.async {
+                if self?.user == nil {
+                    self?.user = currentUser
+                }
+                self?.currentUser = currentUser
+                if self?.user?.id == currentUser.id {
+                    self?.isCurrentUserProfile = true
+                }
             }
             
-            userPosts = getPostsOfUser(userID: user?.id)
-            photosCollectionView.layoutIfNeeded()
-            photosCollectionView.reloadData()
-            Spinner.stop()
-        }
-        
-        usernameTitle.title = user?.username
-        photosCollectionView.register(cellType: PhotoCollectionViewCell.self)
-        photosCollectionView.register(viewType: HeaderCollectionViewCell.self, kind: UICollectionElementKindSectionHeader)
-        photosCollectionView.delegate = self
-        photosCollectionView.dataSource = self
-        photosCollectionView.reloadData()
-        
+            guard let user = self?.user else { return }
+            
+            self?.networkHandler.getPostsOfUser(userID: user.id, completion: { [weak self] posts in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.userPosts = posts
+                self.photosCollectionView.layoutIfNeeded()
+                self.photosCollectionView.reloadData()
+                Spinner.stop()
+            }
+        })
+            
+            self?.usernameTitle.title = self?.user?.username
+            self?.photosCollectionView.register(cellType: PhotoCollectionViewCell.self)
+            self?.photosCollectionView.register(viewType: HeaderCollectionViewCell.self, kind: UICollectionElementKindSectionHeader)
+            self?.photosCollectionView.delegate = self
+            self?.photosCollectionView.dataSource = self
+            self?.photosCollectionView.reloadData()
+        })
     }
     
         
@@ -247,14 +273,12 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
        // })
     
     @objc func logoutTapped() {
-        logout()
+        networkHandler.logout()
         
-        let storyboard: UIStoryboard = UIStoryboard(name: "Main", bundle: NSBundle.mainBundle())
-        let authorizationViewController: AuthorizationViewController = storyboard.instantiateViewControllerWithIdentifier("authorizationVC") as? AuthorizationViewController
-        let navigationController = self.navigationController?
-        navigationController.setViewControllers([authorizationViewController], animated: true)
-        
-        //self.navigationController?.setViewControllers([AuthorizationViewController], animated: true)
+        //let storyboard: UIStoryboard = UIStoryboard(name: "Main", bundle: Bundle.main)
+        guard let authorizationViewController = self.storyboard?.instantiateViewController(withIdentifier: "authorizationVC") as? AuthorizationViewController else { return }
+        let navigationController = self.navigationController
+        navigationController?.setViewControllers([authorizationViewController], animated: true)
         self.navigationController?.popToRootViewController(animated: true)
     }
     

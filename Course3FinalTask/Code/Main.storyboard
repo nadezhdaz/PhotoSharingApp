@@ -416,6 +416,9 @@
                                 <state key="normal" title="Sign In">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 </state>
+                                <connections>
+                                    <action selector="signInButtonPressed:" destination="I4K-n6-Hsg" eventType="touchUpInside" id="5ru-9u-IBk"/>
+                                </connections>
                             </button>
                             <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="7IT-UW-brF">
                                 <rect key="frame" x="16" y="78" width="382" height="40"/>
@@ -454,7 +457,7 @@
         <!--Feed-->
         <scene sceneID="l8y-7H-W0d">
             <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="CR7-8o-VYl" sceneMemberID="viewController">
+                <navigationController storyboardIdentifier="feedVC" automaticallyAdjustsScrollViewInsets="NO" id="CR7-8o-VYl" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Feed" image="feed" id="u8a-Rh-igo" userLabel="Feed"/>
                     <toolbarItems/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="O1F-q5-gN7">
