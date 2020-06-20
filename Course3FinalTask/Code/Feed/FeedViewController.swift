@@ -77,39 +77,14 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
             networkHandler.likePost(postID: cell.postID, completion: { post in
                 cell.updateLikes(post)
             })
-            //cell.updateLikes(post)
-            /*DataProviders.shared.postsDataProvider.likePost(with: cell.postID, queue: self.queue, handler: { [weak self] incomingPost in
-                 guard let self = self else { return }
-                if incomingPost != nil {
-                    DispatchQueue.main.async {
-                        cell.updateLikes(post)
-                    }
-                }
-                else {
-                    self.showError()
-                }
-            })*/
             
         } else {
             networkHandler.unlikePost(postID: cell.postID, completion: { post in
                 cell.updateLikes(post)
             })
-            //cell.updateLikes(post)
-           /* DataProviders.shared.postsDataProvider.unlikePost(with: cell.postID, queue: self.queue, handler: { [weak self] incomingPost in
-                 guard let self = self else { return }
-                if incomingPost != nil {
-                    DispatchQueue.main.async {
-                        cell.updateLikes(post)
-                    }
-                }
-                else {
-                    showError()
-                }
-            })*/
             
         }
         
-        //DispatchQueue.main.async {
         networkHandler.getFeed(completion: { [weak self] incomingPosts in
              guard let self = self else { return }
                             DispatchQueue.main.async {
@@ -119,25 +94,6 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
                                 
             }
         })
-            
-            //Posts.list = incomingPosts
-            //self.feedTableView.reloadData()
-            //self.feedTableView.layoutIfNeeded()
-       // DataProviders.shared.postsDataProvider.feed(queue: self.queue, handler: { [weak self] incomingPosts in
-       //     guard let self = self else { return }
-       //                    DispatchQueue.main.async {
-       //                        if incomingPosts != nil {
-       //                         Posts.list = incomingPosts!
-       //                         self.feedTableView.reloadData()
-       //                         self.feedTableView.layoutIfNeeded()
-       //                        }
-       //                        else {
-       //                            showError()
-       //                     }
-       //
-       //     }
-       //
-       // })
         
     }
 
@@ -150,15 +106,6 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
                 destinationController.user = user
             }
         })
-    //    DataProviders.shared.usersDataProvider.user(with: cell.authorID, queue: self.queue, handler: { [weak self] incomingUser in
-    //        DispatchQueue.main.async {
-    //        if incomingUser != nil {
-    //            destinationController.user = incomingUser!
-    //        }
-    //        else {
-    //            self?.showError()                }
-    //        }
-    //    })
         
         self.navigationController!.pushViewController(destinationController, animated: true)
         
@@ -173,32 +120,11 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
                 destinationController.user = user
             }
         })
-        /*DataProviders.shared.usersDataProvider.user(with: cell.authorID, queue: self.queue, handler: { [weak self] incomingUser in
-            DispatchQueue.main.async {
-            if incomingUser != nil {
-                destinationController.user = incomingUser!
-            }
-            else {
-                self?.showError()
-                }
-            }
-        })*/
         networkHandler.getPost(postID: cell.authorID, completion: { post in
             DispatchQueue.main.async {
                 destinationController.post = post
             }
         })
-        /*Spinner.start()
-        DataProviders.shared.postsDataProvider.post(with: cell.postID, queue: self.queue, handler: { [weak self] incomingPost in
-            DispatchQueue.main.async {
-            if incomingPost != nil {
-                destinationController.post = incomingPost!
-            }
-            else {
-                self?.showError()
-                }
-            }
-        })*/
         
         self.navigationController!.pushViewController(destinationController, animated: true)
     }
@@ -214,33 +140,6 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
                 Spinner.stop()
             }
         })
-        /*DispatchQueue.main.async {
-            guard let incomingPosts = getFeed() else {
-                showError()
-            }
-            
-            Posts.list = incomingPosts
-            self?.feedTableView.reloadData()
-            self?.feedTableView.layoutIfNeeded()
-            Spinner.stop()
-        }*/
     }
-    
- //   Spinner.start()
- //
- //       DataProviders.shared.postsDataProvider.feed(queue: self.queue, handler: { [weak self] incomingPosts in
- //           DispatchQueue.main.async {
- //               if incomingPosts != nil {
- //                   Posts.list = incomingPosts!
- //                   self?.feedTableView.reloadData()
- //                   self?.feedTableView.layoutIfNeeded()
- //               }
- //               else {
- //                   self?.showError()
- //               }
- //               Spinner.stop()
- //           }
- //       })
- //   }
     
 }

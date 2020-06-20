@@ -7,7 +7,8 @@
 
 import UIKit
 
-class AuthorizationViewController: UIViewController, UITextFieldDelegate {//}, SecureStorable {    
+class AuthorizationViewController: UIViewController, UITextFieldDelegate, SecureStorable {
+    
     
     //
     // MARK: - Outlets
@@ -44,6 +45,7 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {//}, S
         }
         
         authorizationRequest(login: username, password: password)
+        
         //networkHandler.login(login: username, password: password, completion: {
         //    self.authorizationToTabBarSegue()
         //})
@@ -83,30 +85,38 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {//}, S
             return false
         }
         
-        //textField.resignFirstResponder()
-        
-        networkHandler.login(login: username, password: password, completion: {
-            self.authorizationToTabBarSegue()
-        })
-        
-        //authorizationRequest(login: username, password: password)
+        authorizationRequest(login: username, password: password)
+        textField.resignFirstResponder()
         
         
         return true
     }
     
     func authorizationToTabBarSegue() {
-        print("here to segue")
         DispatchQueue.main.async {
-            guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "feedVC") as? FeedViewController else { return }
+            let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+            let tabbarController = mainStoryboard.instantiateViewController(withIdentifier: "tabVC") as! UITabBarController
+            let destinationController = mainStoryboard.instantiateViewController(withIdentifier: "feedVC") as! FeedViewController
+            let navController = UINavigationController(rootViewController: tabbarController)
+            let appDelegate = (UIApplication.shared.delegate as! AppDelegate)
+            appDelegate.window?.rootViewController = tabbarController
+            //UIApplication.shared.keyWindow?.rootViewController?.present(navController, animated: true, completion: nil)
+            //UIApplication.shared.keyWindow?.rootViewController?.present(destinationController, animated: true, completion: nil)
+            Spinner.start()
+            navController.popToRootViewController(animated: true)
+            
+           /* guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "feedVC") as? FeedViewController else { return }
+            guard let rootViewController = UIApplication.shared.windows.first!.rootViewController as? FeedViewController else { return }
         let navigationController = destinationController.navigationController
-        navigationController?.setViewControllers([destinationController], animated: true)
+            let navigationControllerSecond = rootViewController.navigationController
+        //navigationController?.setViewControllers([destinationController], animated: true)
             let tabBarController = destinationController.tabBarController
             tabBarController?.present(destinationController, animated: true)
         Spinner.start()
+            navigationControllerSecond?.popToRootViewController(animated: true)*/
+            
         //navigationController?.popToRootViewController(animated: true)
-          //  navigationController?.pushViewController(destinationController, animated: true)
-        print("bye segue")
+           // navigationControllerSecond?.pushViewController(destinationController, animated: true)
     }
         //self.navigationController!.pushViewController(destinationController, animated: true)
     }
@@ -114,8 +124,8 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {//}, S
    private func authorizationRequest(login: String, password: String) {
             networkService.signInRequest(login: login, password: password, completion: { [weak self] token, errorMessage in
                 if let newToken = token {
-                    self?.secureService.safeSaveToken(account: login, token: newToken)
-                    print("token safely saved")
+                    //SecureStorableService.safeSaveToken(account: login, token: newToken)
+                    self?.saveToken(account: login, token: newToken)
                     self?.authorizationToTabBarSegue()
                 }
                 else if let message = errorMessage  {

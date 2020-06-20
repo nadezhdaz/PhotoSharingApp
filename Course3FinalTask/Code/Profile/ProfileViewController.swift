@@ -103,20 +103,6 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
                     view.updateFollows(user)
                 }
             })
-            /*DataProviders.shared.usersDataProvider.unfollow(user!.id, queue: self.queue, handler: { [weak self] incomingUser in
-                guard let self = self else { return }
-                DispatchQueue.main.async {
-                    if incomingUser != nil {
-                        self.user!.followedByCount -= 1
-                        self.currentUser!.followsCount -= 1
-                        self.user!.currentUserFollowsThisUser = false
-                        view.updateFollows(incomingUser!)
-                    }
-                    
-                }
-                
-            })*/
-            
         }
         else {
             self.networkHandler.unfollowUser(userID: user.id, completion: { [weak self] user in
@@ -128,19 +114,6 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
                     view.updateFollows(user)
                 }
             })
-            /*DataProviders.shared.usersDataProvider.follow(user!.id, queue: self.queue, handler: { [weak self] incomingUser in
-                guard let self = self else { return }
-                DispatchQueue.main.async {
-                    if incomingUser != nil {
-                        self.user!.followedByCount += 1
-                        self.currentUser!.followsCount += 1
-                        self.user!.currentUserFollowsThisUser = true
-                        view.updateFollows(incomingUser!)
-                    }
-                    
-                }
-                
-            })*/
         }
         
     }
@@ -154,18 +127,6 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
                 destinationController.user = user
             }
         })
-        //destinationController.user = getUserInfo(userID: view.authorID)
-        /*DataProviders.shared.usersDataProvider.user(with: view.authorID, queue: self.queue, handler: { [weak self] incomingUser in
-            guard let self = self else { return }
-            DispatchQueue.main.async {
-            if incomingUser != nil {
-                destinationController.user = incomingUser!
-            }
-            else {
-                self.showError()
-                }
-            }
-        })*/
         
         self.navigationController!.pushViewController(destinationController, animated: true)
     }
@@ -179,17 +140,6 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
                 destinationController.user = user
             }
         })
-        /*DataProviders.shared.usersDataProvider.user(with: view.authorID, queue: self.queue, handler: { [weak self] incomingUser in
-            guard let self = self else { return }
-            DispatchQueue.main.async {
-            if incomingUser != nil {
-                destinationController.user = incomingUser!
-            }
-            else {
-                self.showError()
-                }
-            }
-        })*/
         
         self.navigationController!.pushViewController(destinationController, animated: true)
     }
@@ -228,49 +178,6 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
             self?.photosCollectionView.reloadData()
         })
     }
-    
-        
-       // DataProviders.shared.usersDataProvider.currentUser(queue: self.queue, handler: { [weak self] currentUser in
-       //     guard let self = self else { return }
-       //     DispatchQueue.main.async {
-       //         if currentUser != nil {
-       //             if self.user == nil {
-       //                 self.user = currentUser!
-       //             }
-       //             self.currentUser = currentUser!
-       //             if self.user?.id == currentUser?.id {
-       //                 self.isCurrentUserProfile = true
-       //             }
-       //
-       //             DataProviders.shared.postsDataProvider.findPosts(by: self.user!.id, queue: self.queue, handler: { [weak self] incomingPosts in
-       //                 guard let self = self else { return }
-       //                 DispatchQueue.main.async {
-       //                     if incomingPosts != nil {
-       //                         self.userPosts = incomingPosts!
-       //                         self.photosCollectionView.layoutIfNeeded()
-       //                         self.photosCollectionView.reloadData()
-       //                     }
-       //                     else {
-       //                         self.showError()
-       //                     }
-       //                     Spinner.stop()
-       //                 }
-       //             })
-       //         }
-       //         else {
-       //             self.showError()
-       //         }
-       //
-       //         self.usernameTitle.title = self.user!.username
-       //         self.photosCollectionView.register(cellType: PhotoCollectionViewCell.self)
-       //         self.photosCollectionView.register(viewType: HeaderCollectionViewCell.self, kind: UICollectionElementKindSectionHeader)
-       //
-       //         self.photosCollectionView.delegate = self
-       //         self.photosCollectionView.dataSource = self
-       //         self.photosCollectionView.reloadData()
-       //
-       //     }
-       // })
     
     @objc func logoutTapped() {
         networkHandler.logout()

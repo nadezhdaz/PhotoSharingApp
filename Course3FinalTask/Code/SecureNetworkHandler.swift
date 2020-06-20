@@ -356,4 +356,6 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
             AlertController.showError()
                }
        })
-   }}
+   }
+    
+}

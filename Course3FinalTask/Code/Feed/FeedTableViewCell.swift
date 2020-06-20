@@ -58,10 +58,10 @@ class FeedTableViewCell: UITableViewCell {
     public func setPost(_ post: Post) {
         currentPost = post
         postID = post.id
-        authorID = post.authorID
+        authorID = post.authorID ?? ""
         avatarButton.kf.setImage(with: post.authorAvatar, for: .normal)
         usernameLabel.text = post.authorUsername
-        dateLabel.text = postTime(post)
+        dateLabel.text = post.createdTime//postTime(post)
         pictureImageView.kf.setImage(with: post.image)
         likesCounterLabel.text = "Likes: \(post.likedByCount)"
         likeButton.tintColor = post.currentUserLikesThisPost ? defaultTintColor : UIColor.lightGray
@@ -86,12 +86,15 @@ class FeedTableViewCell: UITableViewCell {
         bigLikeImageView.alpha = 0
     }
     
-    private func postTime(_ post: Post) -> String {
+   /* private func postTime(_ post: Post) -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MMM dd, yyyy 'at' h:mm:ss aaa"
-        let postTime = dateFormatter.string(from: post.createdTime)
+        var time = Date().timeIntervalSince1970
+        time = TimeInterval(post.createdTime)!
+        let date = Date(timeIntervalSince1970: time)
+        let postTime = dateFormatter.string(from: date)//post.createdTime)
         return postTime
-    }
+    }*/
     
     @objc private func pictureDoubleTapHandler(recognizer: UITapGestureRecognizer) {
         likeButtonTapHandler?()

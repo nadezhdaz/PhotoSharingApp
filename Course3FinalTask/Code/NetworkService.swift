@@ -25,14 +25,26 @@ struct User: Codable {
 
 struct Post: Codable {
     var id: String
-    var authorID: String
+    var authorID: String?
     var description: String
     var image: URL
-    var createdTime: Date//Int
+    var createdTime: String
     var currentUserLikesThisPost: Bool
     var likedByCount: Int
     var authorUsername: String
     var authorAvatar: URL
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case authorID = "author_id"
+        case description
+        case image
+        case createdTime
+        case currentUserLikesThisPost
+        case likedByCount
+        case authorUsername
+        case authorAvatar
+    }
 }
 
 struct Token: Codable {
@@ -110,7 +122,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if let data = data,
                 let response = response as? HTTPURLResponse,
@@ -124,11 +136,6 @@ class NetworkService {
                 }
                 completion(token?.token, nil)
             }
-            
-            let data = data
-            let response = response as? HTTPURLResponse
-            let error = error as? Error
-            print(response?.statusCode)
             
         }
         
@@ -147,14 +154,9 @@ class NetworkService {
         
         guard let url = urlComponents.url else { return }
         
-        urlComponents.queryItems = [
-            URLQueryItem(name: "token", value: token)
-        ]
-        
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        //request.httpBody = Data(query.utf8)
-        //request.setValue(token, forHTTPHeaderField: "header")
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -168,11 +170,10 @@ class NetworkService {
                 completion(errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
-                print("User signed out")
                 completion(nil)
             }
             
@@ -190,16 +191,12 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "/checkToken"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "token", value: token)
-        ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        //request.httpBody = Data(query.utf8)
-        //request.setValue(token, forHTTPHeaderField: "header")
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -213,7 +210,7 @@ class NetworkService {
                 completion(false, errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(false, errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
@@ -236,16 +233,12 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "/users/me"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "header", value: token)
-        ]
         
        guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
         request.httpMethod = "GET"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -259,7 +252,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -298,17 +291,12 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "/users/\(id)"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "header", value: token)
-        ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
-        
         request.httpMethod = "GET"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -326,7 +314,7 @@ class NetworkService {
                         completion(nil, errorMessage)
                 } else if let response = response as? HTTPURLResponse,
                     response.statusCode != 200 {
-                    errorMessage = "Transfer error"
+                    errorMessage = "Transfer error" + String(response.statusCode)
                     completion(nil, errorMessage)
                 } else if let data = data,
                 let response = response as? HTTPURLResponse,
@@ -335,6 +323,7 @@ class NetworkService {
                   do {
                     let decoder = JSONDecoder()
                     decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    decoder.dateDecodingStrategy = .secondsSince1970
                     let userInfo = try decoder.decode(User.self, from: data)
                     user = userInfo
                   } catch {
@@ -364,18 +353,12 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "/users/follow"
-        urlComponents.queryItems = [
-            //URLQueryItem(name: "userID", value: id),
-            URLQueryItem(name: "header", value: token)
-        ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
-        
         request.httpMethod = "POST"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         
@@ -406,7 +389,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -444,17 +427,14 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.path = "users/unfollow"
         urlComponents.queryItems = [
-            URLQueryItem(name: "userID", value: id),
-            URLQueryItem(name: "header", value: token)
+            URLQueryItem(name: "userID", value: id)
         ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
-        
         request.httpMethod = "POST"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -477,7 +457,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -515,17 +495,12 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "/users/\(id)/followers"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "header", value: token)
-        ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
-        
         request.httpMethod = "GET"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -543,7 +518,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -581,17 +556,12 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "users/\(id)/following"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "header", value: token)
-        ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
-        
         request.httpMethod = "GET"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -609,7 +579,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -647,17 +617,12 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "users/\(id)/posts"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "header", value: token)
-        ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
-        
         request.httpMethod = "GET"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -675,7 +640,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -712,9 +677,7 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "/posts/feed"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "header", value: token)
-        ]
+        
         
         guard let url = urlComponents.url else { return }
         
@@ -722,7 +685,11 @@ class NetworkService {
         //request.allHTTPHeaderFields = token
         
         request.httpMethod = "GET"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
+        
+        //request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        //request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -736,17 +703,20 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
-                
+                print(data.description)
                   do {
                     let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    //decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    
+                    decoder.dateDecodingStrategy = .secondsSince1970
                     let postsInfo = try decoder.decode([Post].self, from: data)//Array<Post>.self
+                    print(postsInfo[0].id)
                     posts = postsInfo
                   } catch {
                     debugPrint(error)
@@ -774,17 +744,12 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "/posts/\(id)"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "header", value: token)
-        ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
-        
         request.httpMethod = "GET"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -802,7 +767,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -841,8 +806,7 @@ class NetworkService {
         urlComponents.port = port
         urlComponents.path = "/posts/like"
         urlComponents.queryItems = [
-            URLQueryItem(name: "postID", value: id),
-            URLQueryItem(name: "header", value: token)
+            URLQueryItem(name: "postID", value: id)
         ]
         
         guard let url = urlComponents.url else { return }
@@ -851,7 +815,7 @@ class NetworkService {
         //request.allHTTPHeaderFields = token
         
         request.httpMethod = "POST"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -869,7 +833,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -908,17 +872,14 @@ class NetworkService {
         urlComponents.port = port
         urlComponents.path = "/posts/unlike"
         urlComponents.queryItems = [
-            URLQueryItem(name: "postID", value: id),
-            URLQueryItem(name: "header", value: token)
+            URLQueryItem(name: "postID", value: id)
         ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
-        
         request.httpMethod = "POST"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -936,7 +897,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -974,17 +935,12 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "posts/\(id)/likes"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "header", value: token)
-        ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
-        
         request.httpMethod = "GET"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -1002,7 +958,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -1049,17 +1005,14 @@ class NetworkService {
         urlComponents.path = "posts/create"
         urlComponents.queryItems = [
             URLQueryItem(name: "image", value: base64ImageString),
-            URLQueryItem(name: "description", value: description),
-            URLQueryItem(name: "header", value: token)
+            URLQueryItem(name: "description", value: description)
         ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
-        
         request.httpMethod = "POST"
-        //request.httpBody = Data(query.utf8)
+        request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -1073,7 +1026,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                errorMessage = "Transfer error" + String(response.statusCode)
                 completion(nil, errorMessage)
             } else if
                 let data = data,
