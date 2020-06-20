@@ -43,8 +43,11 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {//}, S
             return
         }
         
-        networkHandler.login(login: username, password: password)
-        authorizationToTabBarSegue()
+        authorizationRequest(login: username, password: password)
+        //networkHandler.login(login: username, password: password, completion: {
+        //    self.authorizationToTabBarSegue()
+        //})
+        
         
     }
     @IBOutlet weak var signInButton: UIButton! {
@@ -67,6 +70,7 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {//}, S
     var networkService = NetworkService()
     var keychainService = KeychainService()
     var networkHandler = SecureNetworkHandler()
+    let secureService = SecureStorableService()
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         guard let username = usernameTextField.text, let password = passwordTextField.text else {
@@ -81,8 +85,9 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {//}, S
         
         //textField.resignFirstResponder()
         
-        networkHandler.login(login: username, password: password)
-        authorizationToTabBarSegue()
+        networkHandler.login(login: username, password: password, completion: {
+            self.authorizationToTabBarSegue()
+        })
         
         //authorizationRequest(login: username, password: password)
         
@@ -91,34 +96,37 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {//}, S
     }
     
     func authorizationToTabBarSegue() {
-        guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "feedVC") as? FeedViewController else { return }
-        let navigationController = self.navigationController
+        print("here to segue")
+        DispatchQueue.main.async {
+            guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "feedVC") as? FeedViewController else { return }
+        let navigationController = destinationController.navigationController
         navigationController?.setViewControllers([destinationController], animated: true)
+            let tabBarController = destinationController.tabBarController
+            tabBarController?.present(destinationController, animated: true)
         Spinner.start()
-        self.navigationController?.popToRootViewController(animated: true)
+        //navigationController?.popToRootViewController(animated: true)
+          //  navigationController?.pushViewController(destinationController, animated: true)
+        print("bye segue")
+    }
         //self.navigationController!.pushViewController(destinationController, animated: true)
     }
     
-   /* private func authorizationRequest(login: String, password: String) {
-        
-        networkService.signInRequest(login: login, password: password, completion: { [weak self] token, errorMessage in
-            if let token = token {
-                do {
-                keychainService.saveToken(account: login, token: token)
+   private func authorizationRequest(login: String, password: String) {
+            networkService.signInRequest(login: login, password: password, completion: { [weak self] token, errorMessage in
+                if let newToken = token {
+                    self?.secureService.safeSaveToken(account: login, token: newToken)
+                    print("token safely saved")
+                    self?.authorizationToTabBarSegue()
                 }
-                catch {
-                    debugPrint(error)
+                else if let message = errorMessage  {
+                 AlertController.showError(with: message)
                 }
-            }
-            else if errorMessage != nil {
-                self?.showError(with: errorMessage)
-            }
-            else {
-                self?.showError()
-            }
-            
-        })
-    }*/
+                else {
+                 AlertController.showError()
+             }
+                
+            })
+    }
     
     
 }

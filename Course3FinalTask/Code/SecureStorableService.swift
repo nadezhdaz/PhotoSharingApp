@@ -8,6 +8,30 @@
 
 import UIKit
 
+class SecureStorableService: UIViewController {
+    
+    
+    
+    func safeSaveToken(account: String, token: String) {
+        let networkService = NetworkService()
+        let keychainService = KeychainService()
+        let account = account
+        let token = token        
+        keychainService.saveToken(account: account, token: token)
+    }
+    
+    /*static */ func safeReadToken() -> String? {
+        let networkService = NetworkService()
+        let keychainService = KeychainService()
+        
+        guard let token = keychainService.readToken(server: KeychainService.server) else {
+            print("Cannot read token from keychain")
+            return nil
+        }
+        return token
+    }
+}
+
 /*protocol SecureStorable: class {
     //associatedtype Data
     

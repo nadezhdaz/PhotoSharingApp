@@ -16,7 +16,7 @@ class SecureNetworkHandler: UIViewController {//}, SecureStorable {
     var networkService = NetworkService()
     var keychainService = KeychainService()
    
-   func login(login: String, password: String) {
+    func login(login: String, password: String, completion: @escaping () -> Void) {
        networkService.signInRequest(login: login, password: password, completion: { [weak self] token, errorMessage in
            if let newToken = token {
             self?.keychainService.saveToken(account: login, token: newToken)
