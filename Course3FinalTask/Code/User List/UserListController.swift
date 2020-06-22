@@ -8,19 +8,17 @@
 import Foundation
 import UIKit
 
-class UserListController: UIViewController, UITableViewDelegate, UITableViewDataSource { //}, SecureStorable {
+class UserListController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
     @IBOutlet var userListTableView: UITableView!
     @IBOutlet weak var userListNavigationItem: UINavigationItem!
     
-    var queue: DispatchQueue? = DispatchQueue(label: "com.myqueues.customQueue", qos: .utility, attributes: .concurrent, autoreleaseFrequency: .inherit, target: .global(qos: .utility))
     var user: User?
     var post: Post?
     var users: [User] = []
     var userIDs: [User] = []
     var listIdentifier: String = ""
-    var networkHandler = SecureNetworkHandler()
-
+    var networkService = NetworkService()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -62,7 +60,7 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
              //   checkToken = result
             //})
             if self.user == nil  {
-                self.networkHandler.getCurrentUserInfo(completion: { currentUser in
+                self.getCurrentUserInfo(completion: { currentUser in
                     self.user = currentUser
                 })
             }
@@ -71,28 +69,28 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
                 case "followers":
                     guard let user = self.user else { return }
                     self.userListNavigationItem.title = "Followers"
-                    self.networkHandler.getFollowers(userID: user.id, completion: { [weak self] users in
+                    self.getFollowers(userID: user.id, completion: { [weak self] users in
                         self?.users = users
                     })
-                    //users = getFollowers(userID: user?.id)
+                    
                     self.userListTableView.reloadData()
                     Spinner.stop()
                 case "following":
                     guard let user = self.user else { return }
                     self.userListNavigationItem.title = "Following"
-                    self.networkHandler.getFollowingUsers(userID: user.id, completion: { [weak self] users in
+                    self.getFollowingUsers(userID: user.id, completion: { [weak self] users in
                         self?.users = users
                     })
-                    //users = getFollowingUsers(userID: user?.id)
+                    
                     self.userListTableView.reloadData()
                     Spinner.stop()
                 case "likes":
                     guard let post = self.post else { return }
                     self.userListNavigationItem.title = "Likes"
-                    self.networkHandler.getLikesForPost(postID: post.id, completion: { [weak self] users in
+                    self.getLikesForPost(postID: post.id, completion: { [weak self] users in
                         self?.users = users
                     })
-                    //users = getLikesForPost(postID: post?.id)
+                    
                     self.userListTableView.reloadData()
                     Spinner.stop()
                     
@@ -109,81 +107,93 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
             self.userListTableView.delegate = self
             self.userListTableView.dataSource = self
             }
-        
-     //   DataProviders.shared.usersDataProvider.currentUser(queue: self.queue, handler: { [weak self] currentUser in
-     //       guard let self = self else { return }
-     //       DispatchQueue.main.async {
-     //           Spinner.start()
-     //           if currentUser != nil {
-     //               if self.user == nil {
-     //                   self.user = currentUser!
-     //               }
-     //           }
-     //           else {
-     //               self.showError()
-     //           }
-     //
-     //         switch self.listIdentifier {
-     //         case "followers":
-     //             self.userListNavigationItem.title = "Followers"
-     //             DataProviders.shared.usersDataProvider.usersFollowingUser(with: self.user!.id, queue: self.queue, handler: { [weak self] incomingUsers in
-     //                 guard let self = self else { return }
-     //                 DispatchQueue.main.async {
-     //                     if incomingUsers != nil {
-     //                         self.users = incomingUsers!
-     //                         self.userListTableView.reloadData()
-     //                         Spinner.stop()
-     //                     }
-     //                     else {
-     //                         self.showError()
-     //                     }
-     //                 }
-     //             })
-     //         case "following":
-     //             self.userListNavigationItem.title = "Following"
-     //             DataProviders.shared.usersDataProvider.usersFollowedByUser(with: self.user!.id, queue: self.queue, handler: { [weak self] incomingUsers in
-     //                 guard let self = self else { return }
-     //                 DispatchQueue.main.async {
-     //                     if incomingUsers != nil {
-     //                         self.users = incomingUsers!
-     //                         self.userListTableView.reloadData()
-     //                         Spinner.stop()
-     //                     }
-     //                     else {
-     //                         self.showError()
-     //                     }
-     //                 }
-     //             })
-     //         case "likes":
-     //             self.userListNavigationItem.title = "Likes"
-     //             DataProviders.shared.postsDataProvider.usersLikedPost(with: self.post!.id, queue: self.queue, handler: { [weak self] incomingUsers in
-     //                 guard let self = self else { return }
-     //                 DispatchQueue.main.async {
-     //                     if incomingUsers != nil {
-     //                         self.users = incomingUsers!
-     //                         self.userListTableView.reloadData()
-     //                         Spinner.stop()
-     //                     }
-     //                     else {
-     //                         self.showError()
-     //                     }
-     //                 }
-     //             })
-     //
-     //         default:
-     //             print("List identifier error")
-     //             self.showError()
-     //         }
-     //
-     //         self.userListTableView.rowHeight = UITableViewAutomaticDimension
-     //         self.userListTableView.estimatedRowHeight = 45.0
-     //
-     //         self.userListTableView.register(UINib(nibName: String(describing: UserListCell.self), bundle: nil), forCellReuseIdentifier: String(describing: UserListCell.self))
-     //
-     //         self.userListTableView.delegate = self
-     //         self.userListTableView.dataSource = self
-     //     }
-      //  })
 
     }
+    
+    private func getCurrentUserInfo(completion: @escaping (User) -> ()) {
+        guard let token = SecureStorableService.safeReadToken() else {
+         print("Cannot read token from keychain")
+         AlertController.showError()
+         return
+     }
+        //var user: User?
+        
+        networkService.currentUserInfoRequest(token: token, completion: { currentUser, errorMessage in
+            if let user = currentUser {
+             completion(user)
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+        
+    }
+    
+    private func getFollowers(userID: String, completion: @escaping ([User]) -> ()) {
+        guard let token = SecureStorableService.safeReadToken() else {
+            print("Cannot read token from keychain")
+            AlertController.showError()
+         return
+        }
+        let userID = userID
+        
+        networkService.getFollowersRequest(token: token, userID: userID, completion: { users, errorMessage in
+            if let followers = users {
+             completion(followers) //users
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+    }
+    
+    private func getFollowingUsers(userID: String, completion: @escaping ([User]) -> ()) {
+        guard let token = SecureStorableService.safeReadToken() else {
+            print("Cannot read token from keychain")
+            AlertController.showError()
+         return
+        }
+        let userID = userID
+        
+        networkService.getFollowingUsersRequest(token: token, userID: userID, completion: { users, errorMessage in
+            if let followingUsers = users {
+                completion(followingUsers) //users
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+    }
+    
+    private func getLikesForPost(postID: String, completion: @escaping ([User]) -> ()) {
+     guard let token = SecureStorableService.safeReadToken() else {
+         print("Cannot read token from keychain")
+         AlertController.showError()
+         return
+     }
+        let postID = postID
+        //var users: [User?]
+        
+        networkService.getLikesForPostRequest(token: token, postID: postID, completion: { usersLikedPost, errorMessage in
+            if let users = usersLikedPost {
+                completion(users)
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+    }
+    
 }

@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 
-class ProfileViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout { //, SecureStorable {
+class ProfileViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     
     @IBOutlet weak var usernameTitle: UINavigationItem! //{
      //   didSet {
@@ -29,8 +29,7 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
     var user: User?
     var currentUser: User?
     var isCurrentUserProfile: Bool = false
-    var queue: DispatchQueue? = DispatchQueue(label: "com.myqueues.customQueue", qos: .userInteractive, attributes: .concurrent, autoreleaseFrequency: .inherit, target: .global(qos: .userInteractive))
-    var networkHandler = SecureNetworkHandler()
+    var networkService = NetworkService()
     
     // MARK: - UIViewController
     
@@ -91,10 +90,10 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
     }
     
     func followButtonHandler(_ view: HeaderCollectionViewCell) {
-        guard let user = user, let currentUser = currentUser else { return }
+        guard let user = user else { return }
         
         if user.currentUserFollowsThisUser {
-            self.networkHandler.unfollowUser(userID: user.id, completion: { [weak self] user in
+            self.unfollowUser(userID: user.id, completion: { [weak self] user in
                 guard let self = self else { return }
                 DispatchQueue.main.async {
                     self.user!.followedByCount -= 1
@@ -105,7 +104,7 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
             })
         }
         else {
-            self.networkHandler.unfollowUser(userID: user.id, completion: { [weak self] user in
+            self.followUser(userID: user.id, completion: { [weak self] user in
                 guard let self = self else { return }
                 DispatchQueue.main.async {
                     self.user!.followedByCount += 1
@@ -122,7 +121,7 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "userListVC") as? UserListController else { return }
         destinationController.listIdentifier = "followers"
         Spinner.start()
-        networkHandler.getUserInfo(userID: view.authorID, completion: { user in
+        getUserInfo(userID: view.authorID, completion: { user in
             DispatchQueue.main.async {
                 destinationController.user = user
             }
@@ -135,7 +134,7 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "userListVC") as? UserListController else { return }
         destinationController.listIdentifier = "following"
         Spinner.start()
-        networkHandler.getUserInfo(userID: view.authorID, completion: { user in
+        getUserInfo(userID: view.authorID, completion: { user in
             DispatchQueue.main.async {
                 destinationController.user = user
             }
@@ -147,8 +146,9 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
     private func setupUserPosts() {
         Spinner.start()
         
-        self.networkHandler.getCurrentUserInfo(completion: { [weak self] currentUser in
-            DispatchQueue.main.async {
+        DispatchQueue.main.async {
+            self.getCurrentUserInfo(completion: { [weak self] currentUser in
+           //DispatchQueue.main.async {
                 if self?.user == nil {
                     self?.user = currentUser
                 }
@@ -156,19 +156,21 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
                 if self?.user?.id == currentUser.id {
                     self?.isCurrentUserProfile = true
                 }
-            }
+            
             
             guard let user = self?.user else { return }
-            
-            self?.networkHandler.getPostsOfUser(userID: user.id, completion: { [weak self] posts in
-            guard let self = self else { return }
             DispatchQueue.main.async {
+            self?.getPostsOfUser(userID: user.id, completion: { [weak self] posts in
+            guard let self = self else { return }
+            //DispatchQueue.main.async {
                 self.userPosts = posts
                 self.photosCollectionView.layoutIfNeeded()
                 self.photosCollectionView.reloadData()
                 Spinner.stop()
-            }
+           // }
+                
         })
+                
             
             self?.usernameTitle.title = self?.user?.username
             self?.photosCollectionView.register(cellType: PhotoCollectionViewCell.self)
@@ -176,11 +178,13 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
             self?.photosCollectionView.delegate = self
             self?.photosCollectionView.dataSource = self
             self?.photosCollectionView.reloadData()
+                }
         })
+    }
     }
     
     @objc func logoutTapped() {
-        networkHandler.logout()
+        userSignOut()
         
         //let storyboard: UIStoryboard = UIStoryboard(name: "Main", bundle: Bundle.main)
         guard let authorizationViewController = self.storyboard?.instantiateViewController(withIdentifier: "authorizationVC") as? AuthorizationViewController else { return }
@@ -194,4 +198,127 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         self.navigationItem.rightBarButtonItem = logoutButton
     }
     
+    private func getCurrentUserInfo(completion: @escaping (User) -> ()) {
+        guard let token = SecureStorableService.safeReadToken() else {
+         print("Cannot read token from keychain")
+         AlertController.showError()
+         return
+     }
+        //var user: User?
+        
+        networkService.currentUserInfoRequest(token: token, completion: { currentUser, errorMessage in
+            if let user = currentUser {
+             completion(user)
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+        
+    }
+    
+    private func getUserInfo(userID: String, completion: @escaping (User) -> ()) {
+        guard let token = SecureStorableService.safeReadToken() else {
+            print("Cannot read token from keychain")
+            AlertController.showError()
+         return
+        }
+        let userID = userID
+        //var user: User?
+        
+        networkService.userInfoRequest(token: token, userID: userID, completion: { user, errorMessage in
+            if let user = user {
+                completion(user)
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+    }
+    
+    private func followUser(userID: String, completion: @escaping (User) -> ()) {
+        guard let token = SecureStorableService.safeReadToken() else {
+            print("Cannot read token from keychain")
+            AlertController.showError()
+         return
+        }
+        let userID = userID
+        
+        networkService.followUserRequest(token: token, userID: userID, completion: { user, errorMessage in
+            if let user = user {
+                completion(user)
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+    }
+    
+    private func unfollowUser(userID: String, completion: @escaping (User) -> ()) {
+        guard let token = SecureStorableService.safeReadToken() else {
+            print("Cannot read token from keychain")
+            AlertController.showError()
+         return
+        }
+        let userID = userID
+        
+        networkService.followUserRequest(token: token, userID: userID, completion: { user, errorMessage in
+            if let user = user {
+                completion(user)
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+    }
+    
+    private func getPostsOfUser(userID: String, completion: @escaping ([Post]) -> ()) {
+        guard let token = SecureStorableService.safeReadToken() else {
+            print("Cannot read token from keychain")
+            AlertController.showError()
+         return
+        }
+        let userID = userID
+        //var postsOfUser: [Post?]
+        
+        networkService.getPostsOfUserRequest(token: token, userID: userID, completion: { posts, errorMessage in
+            if let postsOfUser = posts {
+                completion(postsOfUser) //posts
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+    }
+    
+    private func userSignOut() {
+        guard let token = SecureStorableService.safeReadToken() else {
+            print("Cannot read token from keychain")
+            return
+        }
+        networkService.signOutRequest(token: token, completion: { errorMessage in
+            if let message = errorMessage {
+                AlertController.showError(with: message)
+            }
+            else {
+                SecureStorableService.safeDeleteToken()
+            }
+            
+        })
+    }
 }

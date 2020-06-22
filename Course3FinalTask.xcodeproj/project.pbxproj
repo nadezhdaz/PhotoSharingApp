@@ -16,7 +16,6 @@
 		419C9C6B22C246430008209A /* UICollectionView+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 419C9C6A22C246430008209A /* UICollectionView+Extensions.swift */; };
 		41B0F125248403AF00C3B895 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B0F124248403AE00C3B895 /* NetworkService.swift */; };
 		41DA4235249106B70001A569 /* SecureStorableService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41DA4234249106B70001A569 /* SecureStorableService.swift */; };
-		41DA4237249258C60001A569 /* SecureNetworkHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41DA4236249258C60001A569 /* SecureNetworkHandler.swift */; };
 		41DA425924957A220001A569 /* new in Resources */ = {isa = PBXBuildFile; fileRef = 41DA425824957A220001A569 /* new */; };
 		41DA426D249A52000001A569 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 41DA426C249A52000001A569 /* Kingfisher */; };
 		450B4B1D2190B24C00B91199 /* FeedTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 450B4B1C2190B24C00B91199 /* FeedTableViewCell.xib */; };
@@ -64,7 +63,6 @@
 		41B0F124248403AE00C3B895 /* NetworkService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
 		41B0F1262484103E00C3B895 /* AuthorizationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthorizationViewController.swift; sourceTree = "<group>"; };
 		41DA4234249106B70001A569 /* SecureStorableService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorableService.swift; sourceTree = "<group>"; };
-		41DA4236249258C60001A569 /* SecureNetworkHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureNetworkHandler.swift; sourceTree = "<group>"; };
 		41DA425824957A220001A569 /* new */ = {isa = PBXFileReference; lastKnownFileType = folder; path = new; sourceTree = "<group>"; };
 		41DA425B249A44570001A569 /* Kingfisher.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kingfisher.framework; path = Carthage/Build/iOS/Kingfisher.framework; sourceTree = "<group>"; };
 		450B4B1C2190B24C00B91199 /* FeedTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FeedTableViewCell.xib; sourceTree = "<group>"; };
@@ -205,7 +203,6 @@
 				419C9C6822C156CB0008209A /* Posts.swift */,
 				41B0F124248403AE00C3B895 /* NetworkService.swift */,
 				41DA4234249106B70001A569 /* SecureStorableService.swift */,
-				41DA4236249258C60001A569 /* SecureNetworkHandler.swift */,
 				412D72D224868BB700C3977F /* KeychainService.swift */,
 				419C9C6A22C246430008209A /* UICollectionView+Extensions.swift */,
 				41B0F1282484106B00C3B895 /* Authorization */,
@@ -355,7 +352,6 @@
 				41DA4235249106B70001A569 /* SecureStorableService.swift in Sources */,
 				451CE212225D1CC600D1370D /* FiltersListController.swift in Sources */,
 				419C9C6922C156CB0008209A /* Posts.swift in Sources */,
-				41DA4237249258C60001A569 /* SecureNetworkHandler.swift in Sources */,
 				41B0F125248403AF00C3B895 /* NetworkService.swift in Sources */,
 				4156F27A229D9A2100E5FBDF /* NewPostDescriptionController.swift in Sources */,
 				412D72D324868BB700C3977F /* KeychainService.swift in Sources */,

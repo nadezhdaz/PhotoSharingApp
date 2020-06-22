@@ -7,7 +7,7 @@
 
 import UIKit
 
-class AuthorizationViewController: UIViewController, UITextFieldDelegate, SecureStorable {
+class AuthorizationViewController: UIViewController, UITextFieldDelegate {
     
     
     //
@@ -44,7 +44,7 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate, Secure
             return
         }
         
-        authorizationRequest(login: username, password: password)
+        userSignIn(login: username, password: password)
         
         //networkHandler.login(login: username, password: password, completion: {
         //    self.authorizationToTabBarSegue()
@@ -70,9 +70,6 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate, Secure
     }
     
     var networkService = NetworkService()
-    var keychainService = KeychainService()
-    var networkHandler = SecureNetworkHandler()
-    let secureService = SecureStorableService()
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         guard let username = usernameTextField.text, let password = passwordTextField.text else {
@@ -85,7 +82,7 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate, Secure
             return false
         }
         
-        authorizationRequest(login: username, password: password)
+        userSignIn(login: username, password: password)
         textField.resignFirstResponder()
         
         
@@ -96,7 +93,7 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate, Secure
         DispatchQueue.main.async {
             let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
             let tabbarController = mainStoryboard.instantiateViewController(withIdentifier: "tabVC") as! UITabBarController
-            let destinationController = mainStoryboard.instantiateViewController(withIdentifier: "feedVC") as! FeedViewController
+            //let destinationController = mainStoryboard.instantiateViewController(withIdentifier: "feedVC") as! FeedViewController
             let navController = UINavigationController(rootViewController: tabbarController)
             let appDelegate = (UIApplication.shared.delegate as! AppDelegate)
             appDelegate.window?.rootViewController = tabbarController
@@ -121,11 +118,10 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate, Secure
         //self.navigationController!.pushViewController(destinationController, animated: true)
     }
     
-   private func authorizationRequest(login: String, password: String) {
+   private func userSignIn(login: String, password: String) {
             networkService.signInRequest(login: login, password: password, completion: { [weak self] token, errorMessage in
                 if let newToken = token {
-                    //SecureStorableService.safeSaveToken(account: login, token: newToken)
-                    self?.saveToken(account: login, token: newToken)
+                    SecureStorableService.safeSaveToken(account: login, token: newToken)
                     self?.authorizationToTabBarSegue()
                 }
                 else if let message = errorMessage  {

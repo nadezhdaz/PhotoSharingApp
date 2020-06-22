@@ -7,12 +7,11 @@
 
 import UIKit
 
-class FeedViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {//}, SecureStorable {
+class FeedViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
     var cellHeights: [IndexPath : CGFloat] = [:]
-    var queue: DispatchQueue? = DispatchQueue(label: "com.myqueues.customQueue", qos: .userInteractive, attributes: .concurrent, autoreleaseFrequency: .inherit, target: .global(qos: .userInteractive))
-    var networkHandler = SecureNetworkHandler()
-
+    var networkService = NetworkService()
+    
     @IBOutlet weak var feedTableView: UITableView! {
         didSet {
             feedTableView.register(UINib(nibName: String(describing: FeedTableViewCell.self), bundle: nil), forCellReuseIdentifier: String(describing: FeedTableViewCell.self))
@@ -74,18 +73,18 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         if !(post.currentUserLikesThisPost) {
             
             cell.bigLikeAnimation()
-            networkHandler.likePost(postID: cell.postID, completion: { post in
+            likePost(postID: cell.postID, completion: { post in
                 cell.updateLikes(post)
             })
             
         } else {
-            networkHandler.unlikePost(postID: cell.postID, completion: { post in
+            unlikePost(postID: cell.postID, completion: { post in
                 cell.updateLikes(post)
             })
             
         }
         
-        networkHandler.getFeed(completion: { [weak self] incomingPosts in
+        getFeed(completion: { [weak self] incomingPosts in
              guard let self = self else { return }
                             DispatchQueue.main.async {
                                  Posts.list = incomingPosts
@@ -101,7 +100,7 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
     func feedToProfileSegue(_ cell: FeedTableViewCell) {
         guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "profileVC") as? ProfileViewController else { return }
         Spinner.start()
-        networkHandler.getUserInfo(userID: cell.authorID, completion: { user in
+        getUserInfo(userID: cell.authorID, completion: { user in
             DispatchQueue.main.async {
                 destinationController.user = user
             }
@@ -115,12 +114,12 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "userListVC") as? UserListController else { return }
         destinationController.listIdentifier = "likes"
         Spinner.start()
-        networkHandler.getUserInfo(userID: cell.authorID, completion: { user in
+        getUserInfo(userID: cell.authorID, completion: { user in
             DispatchQueue.main.async {
                 destinationController.user = user
             }
         })
-        networkHandler.getPost(postID: cell.authorID, completion: { post in
+        getPost(postID: cell.authorID, completion: { post in
             DispatchQueue.main.async {
                 destinationController.post = post
             }
@@ -132,13 +131,125 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
     func setupPosts() {
         Spinner.start()
         
-        networkHandler.getFeed(completion: { [weak self] feed in
+        getFeed(completion: { [weak self] feed in
             DispatchQueue.main.async {
                 Posts.list = feed
                 self?.feedTableView.reloadData()
                 self?.feedTableView.layoutIfNeeded()
                 Spinner.stop()
             }
+        })
+    }
+    
+    private func getUserInfo(userID: String, completion: @escaping (User) -> ()) {
+        guard let token = SecureStorableService.safeReadToken() else {
+            print("Cannot read token from keychain")
+            AlertController.showError()
+         return
+        }
+        let userID = userID
+        
+        networkService.userInfoRequest(token: token, userID: userID, completion: { user, errorMessage in
+            if let user = user {
+                completion(user)
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+    }
+    
+    private func getFeed(completion: @escaping ([Post]) -> ()) {
+        guard let token = SecureStorableService.safeReadToken() else {
+            print("Cannot read token from keychain")
+            return            
+        }
+          //var feed: [Post?]
+          
+          networkService.getFeedRequest(token: token, completion: { posts, errorMessage in
+              if let feed = posts {
+                for post in feed {
+                    print("authorID \(String(describing: post.authorID))")
+                    print("id \(post.id)")
+                    print(post.authorUsername)
+                    print(post.createdTime)
+                }
+                  completion(feed) //posts
+              }
+              else if let message = errorMessage {
+              AlertController.showError(with: message)
+              }
+              else {
+                AlertController.showError()
+                  }
+          })
+      }
+    
+    private func getPost(postID: String, completion: @escaping (Post) -> ()) {
+     guard let token = SecureStorableService.safeReadToken() else {
+         print("Cannot read token from keychain")
+         AlertController.showError()
+         return
+     }
+        let postID = postID
+        
+        networkService.getPostRequest(token: token, postID: postID, completion: { receivedPost, errorMessage in
+            if let post = receivedPost {
+                completion(post)
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+    }
+    
+    private func likePost(postID: String, completion: @escaping (Post) -> ()) {
+     guard let token = SecureStorableService.safeReadToken() else {
+         print("Cannot read token from keychain")
+         AlertController.showError()
+         return
+     }
+        let postID = postID
+        //var post: Post?
+        
+        networkService.likePostRequest(token: token, postID: postID, completion: { likedPost, errorMessage in
+            if let post = likedPost {
+                completion(post)
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
+    }
+    
+    private func unlikePost(postID: String, completion: @escaping (Post) -> ()) {
+     guard let token = SecureStorableService.safeReadToken() else {
+         print("Cannot read token from keychain")
+         AlertController.showError()
+         return
+     }
+        let postID = postID
+        //var post: Post?
+        
+        networkService.unlikePostRequest(token: token, postID: postID, completion: { unlikedPost, errorMessage in
+            if let post = unlikedPost {
+                completion(post)
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
         })
     }
     

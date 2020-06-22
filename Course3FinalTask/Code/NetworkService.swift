@@ -122,7 +122,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if let data = data,
                 let response = response as? HTTPURLResponse,
@@ -170,7 +170,7 @@ class NetworkService {
                 completion(errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
@@ -210,7 +210,7 @@ class NetworkService {
                 completion(false, errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(false, errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
@@ -252,7 +252,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -314,7 +314,7 @@ class NetworkService {
                         completion(nil, errorMessage)
                 } else if let response = response as? HTTPURLResponse,
                     response.statusCode != 200 {
-                    errorMessage = "Transfer error" + String(response.statusCode)
+                    errorMessage = "Transfer error"
                     completion(nil, errorMessage)
                 } else if let data = data,
                 let response = response as? HTTPURLResponse,
@@ -389,7 +389,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -457,7 +457,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -518,7 +518,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -579,7 +579,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -640,7 +640,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -703,7 +703,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -767,7 +767,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -833,7 +833,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -897,7 +897,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -958,7 +958,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -1026,7 +1026,7 @@ class NetworkService {
                 completion(nil, errorMessage)
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error" + String(response.statusCode)
+                errorMessage = "Transfer error"
                 completion(nil, errorMessage)
             } else if
                 let data = data,
@@ -1052,90 +1052,5 @@ class NetworkService {
         
         task.resume()
     }
-    
-    
-    
-   /* func makeAuthorizationRequest(account: String, password: String, completion: @escaping AuthorizationResult) {
-        let account = account
-        let password = password
-        let loginString = "\(account):\(password)"
-        
-        guard let loginData = loginString.data(using: String.Encoding.utf8) else {
-            return
-        }
-        let base64LoginString = loginData.base64EncodedString()
-        
-        let url = URL(string: hostPath)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("application/json", forHTTPHeaderField: "Accept")
-        
-        let parameters = ["username": account, "password": password]
-        
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: parameters, options: .prettyPrinted)
-        } catch let error {
-            print(error.localizedDescription)
-        }
-        
-        let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
-            
-            if let error = error {
-                print("DataTask error: " + error.localizedDescription + "\n")
-            } else if
-                let data = data,
-                let response = response as? HTTPURLResponse,
-                response.statusCode == 200 {
-                
-                self?.parseUserData(data)
-                completion(self?.user, errorMessage)
-            }
-            else {
-                
-            }
-        }
-        
-        task.resume()
-    }
-    
-    //
-    // MARK: - Private Methods
-    //
-    
-    private func parseUserData(_ data: Data) {
-        user = nil
-        
-        do {
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let userToken = try decoder.decode(String, from: data)
-            user = userInfo
-        } catch {
-            debugPrint(error)
-            print("JSONDecoder error: \(error.localizedDescription)\n")
-            return
-        }
-        
-    }
-    
-    private func parseUserInfo(_ data: Data) {
-       // repositories = nil
-        
-        do {
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let userInfo = try decoder.decode(User.self, from: data)
-            repositories = repositoriesInfo
-        } catch {
-            debugPrint(error)
-            print("JSONDecoder error: \(error.localizedDescription)\n")
-            return
-        }
 
-    }*/
 }

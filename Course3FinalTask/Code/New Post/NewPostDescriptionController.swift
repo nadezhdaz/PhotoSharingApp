@@ -7,7 +7,7 @@
 
 import UIKit
 
-class NewPostDescriptionController: UIViewController { //, SecureStorable {
+class NewPostDescriptionController: UIViewController {
     
     @IBOutlet weak var chosenImageView: UIImageView! {
         didSet {
@@ -17,16 +17,13 @@ class NewPostDescriptionController: UIViewController { //, SecureStorable {
     @IBOutlet weak var descriptionTextField: UITextField!
     
     var finalImage: UIImage?
-    //var queue: DispatchQueue? = DispatchQueue(label: "com.myqueues.customQueue", qos: .userInteractive, attributes: .concurrent, autoreleaseFrequency: .inherit, target: .global(qos: .userInteractive))
-    var networkHandler = SecureNetworkHandler()
+    var networkService = NetworkService()
     
     @IBAction func shareButtonPressed(_ sender: Any) {
         Spinner.start()
-        //let image = finalImage
-        //let description = descriptionTextField.text
         guard let image = finalImage, let description = descriptionTextField.text else { return }
         
-        networkHandler.createPost(image: image, description: description, completion: { [weak self] newPost in
+        createPost(image: image, description: description, completion: { [weak self] newPost in
             guard let self = self else { return }
             DispatchQueue.main.async {
                 guard let navController = self.tabBarController?.viewControllers?.first as? UINavigationController else { return }
@@ -43,6 +40,29 @@ class NewPostDescriptionController: UIViewController { //, SecureStorable {
             }
         } )
 
+    }
+    
+    private func createPost(image: UIImage, description: String, completion: @escaping (Post) -> ()) {
+     guard let token = SecureStorableService.safeReadToken() else {
+         print("Cannot read token from keychain")
+         AlertController.showError()
+         return
+     }
+        let image = image
+        let description = description
+        //var post: Post?
+        
+        networkService.createPostRequest(token: token, image: image, description: description, completion: { createdPost, errorMessage in
+            if let post = createdPost {
+                completion(post)
+            }
+            else if let message = errorMessage {
+            AlertController.showError(with: message)
+            }
+            else {
+             AlertController.showError()
+                }
+        })
     }
 
 }

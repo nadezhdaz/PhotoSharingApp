@@ -67,8 +67,8 @@ class KeychainService {
         
         guard let item = queryResult as? [String : AnyObject],
             let tokenData = item[kSecValueData as String] as? Data,
-            let token = String(data: tokenData, encoding: .utf8),
-            let account = item[kSecAttrAccount as String] as? String else {
+            let token = String(data: tokenData, encoding: .utf8) else {
+            //let account = item[kSecAttrAccount as String] as? String else {
                 return nil
         }
         return token

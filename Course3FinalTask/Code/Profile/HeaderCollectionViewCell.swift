@@ -30,7 +30,7 @@ class HeaderCollectionViewCell: UICollectionReusableView {
         followButtonTapHandler?()
     }
     
-    var authorID = ""//: User.id = ""
+    var authorID = ""
     var followButtonTapHandler: (() -> Void)?
     var followersLabelTapHandler: (() -> Void)?
     var followingLabelTapHandler: (() -> Void)?
