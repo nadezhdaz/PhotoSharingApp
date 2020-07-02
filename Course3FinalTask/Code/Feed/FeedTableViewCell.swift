@@ -4,6 +4,7 @@
 //  Copyright © 2018 e-Legion. All rights reserved.
 //
 
+import Foundation
 import UIKit
 import Kingfisher
 
@@ -58,10 +59,10 @@ class FeedTableViewCell: UITableViewCell {
     public func setPost(_ post: Post) {
         currentPost = post
         postID = post.id
-        authorID = post.authorID ?? ""
+        authorID = post.author ?? ""
         avatarButton.kf.setImage(with: post.authorAvatar, for: .normal)
         usernameLabel.text = post.authorUsername
-        dateLabel.text = post.createdTime//postTime(post)
+        dateLabel.text = postTime(post.createdTime)
         pictureImageView.kf.setImage(with: post.image)
         likesCounterLabel.text = "Likes: \(post.likedByCount)"
         likeButton.tintColor = post.currentUserLikesThisPost ? defaultTintColor : UIColor.lightGray
@@ -70,31 +71,36 @@ class FeedTableViewCell: UITableViewCell {
     
     public func updateLikes(_ post: Post?) {
         guard let post = post else { return }
+        if post.currentUserLikesThisPost {
+            performBigLikeAnimation(view: bigLikeImageView)
+        }
         likesCounterLabel.text = post.currentUserLikesThisPost ? "Likes: \(post.likedByCount - 1)" : "Likes: \(post.likedByCount + 1)"
         likeButton.tintColor = post.currentUserLikesThisPost ? UIColor.lightGray : defaultTintColor
     }
     
-    public func bigLikeAnimation() {
-        let animation = CAKeyframeAnimation(keyPath: "opacity")
-        animation.values = [0, 1, 1, 0]
-        animation.keyTimes = [0, 0.1, 0.3, 0.6]
-        animation.duration = 0.6
-        let linear = CAMediaTimingFunction(name: kCAMediaTimingFunctionLinear)
-        let easeOut = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseOut)
-        animation.timingFunctions = [linear, easeOut]
-        bigLikeImageView.layer.add(animation, forKey: "opacity")
-        bigLikeImageView.alpha = 0
+    private func postTime(_ time: String) -> String {
+        let time = time
+        let dateFormatterISO8601 = ISO8601DateFormatter()
+        let dateFormatter = DateFormatter()
+        dateFormatterISO8601.formatOptions = [ .withInternetDateTime ]
+        let formattedTime = dateFormatterISO8601.date(from: time)!
+        dateFormatter.dateFormat = "MMM dd, yyyy 'at' h:mm:ss aaa"
+        let postTime = dateFormatter.string(from: formattedTime)
+        return postTime
     }
     
-   /* private func postTime(_ post: Post) -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MMM dd, yyyy 'at' h:mm:ss aaa"
-        var time = Date().timeIntervalSince1970
-        time = TimeInterval(post.createdTime)!
-        let date = Date(timeIntervalSince1970: time)
-        let postTime = dateFormatter.string(from: date)//post.createdTime)
-        return postTime
-    }*/
+    private func performBigLikeAnimation(view: UIView) {
+        view.alpha = 0
+        
+        UIView.animate(withDuration: 0.1, delay: 0, options: [.curveLinear], animations: {
+            view.alpha = 1
+        }) { completion in
+            UIView.animate(withDuration: 0.3, delay: 0.2, options: [.curveEaseOut], animations: {
+                view.alpha = 0
+            })  { completion in
+            }
+        }
+    }
     
     @objc private func pictureDoubleTapHandler(recognizer: UITapGestureRecognizer) {
         likeButtonTapHandler?()

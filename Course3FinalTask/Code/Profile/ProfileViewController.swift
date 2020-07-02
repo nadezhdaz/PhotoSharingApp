@@ -35,7 +35,6 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        addLogoutButton()
         setupUserPosts()
     }
     
@@ -96,9 +95,9 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
             self.unfollowUser(userID: user.id, completion: { [weak self] user in
                 guard let self = self else { return }
                 DispatchQueue.main.async {
-                    self.user!.followedByCount -= 1
+                    self.user?.followedByCount -= 1
                     self.currentUser!.followsCount -= 1
-                    self.user!.currentUserFollowsThisUser = false
+                    self.user?.currentUserFollowsThisUser = false
                     view.updateFollows(user)
                 }
             })
@@ -107,9 +106,9 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
             self.followUser(userID: user.id, completion: { [weak self] user in
                 guard let self = self else { return }
                 DispatchQueue.main.async {
-                    self.user!.followedByCount += 1
+                    self.user?.followedByCount += 1
                     self.currentUser!.followsCount += 1
-                    self.user!.currentUserFollowsThisUser = true
+                    self.user?.currentUserFollowsThisUser = true
                     view.updateFollows(user)
                 }
             })
@@ -124,6 +123,7 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         getUserInfo(userID: view.authorID, completion: { user in
             DispatchQueue.main.async {
                 destinationController.user = user
+                print("destination controller user \(user.id)")
             }
         })
         
@@ -146,51 +146,53 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
     private func setupUserPosts() {
         Spinner.start()
         
-        DispatchQueue.main.async {
-            self.getCurrentUserInfo(completion: { [weak self] currentUser in
-           //DispatchQueue.main.async {
+        getCurrentUserInfo(completion: { [weak self] currentUser in
+            DispatchQueue.main.async {
                 if self?.user == nil {
                     self?.user = currentUser
                 }
                 self?.currentUser = currentUser
+                
                 if self?.user?.id == currentUser.id {
                     self?.isCurrentUserProfile = true
+                    self?.addLogoutButton()
                 }
-            
-            
-            guard let user = self?.user else { return }
-            DispatchQueue.main.async {
-            self?.getPostsOfUser(userID: user.id, completion: { [weak self] posts in
-            guard let self = self else { return }
-            //DispatchQueue.main.async {
-                self.userPosts = posts
-                self.photosCollectionView.layoutIfNeeded()
-                self.photosCollectionView.reloadData()
-                Spinner.stop()
-           // }
                 
-        })
+                guard let user = self?.user else { return }
+                    
+                self?.getPostsOfUser(userID: user.id, completion: { [weak self] posts in
+                    DispatchQueue.main.async {
+                        self?.userPosts = posts
+                        self?.photosCollectionView.layoutIfNeeded()
+                        self?.photosCollectionView.reloadData()
+                        Spinner.stop()
+                    }
+                    
+                })
                 
+                self?.usernameTitle.title = self?.user?.username
+                self?.photosCollectionView.register(cellType: PhotoCollectionViewCell.self)
+                self?.photosCollectionView.register(viewType: HeaderCollectionViewCell.self, kind:     UICollectionView.elementKindSectionHeader)
+                self?.photosCollectionView.delegate = self
+                self?.photosCollectionView.dataSource = self
+                self?.photosCollectionView.reloadData()
+                
+            }
             
-            self?.usernameTitle.title = self?.user?.username
-            self?.photosCollectionView.register(cellType: PhotoCollectionViewCell.self)
-            self?.photosCollectionView.register(viewType: HeaderCollectionViewCell.self, kind: UICollectionElementKindSectionHeader)
-            self?.photosCollectionView.delegate = self
-            self?.photosCollectionView.dataSource = self
-            self?.photosCollectionView.reloadData()
-                }
         })
-    }
     }
     
     @objc func logoutTapped() {
         userSignOut()
-        
-        //let storyboard: UIStoryboard = UIStoryboard(name: "Main", bundle: Bundle.main)
-        guard let authorizationViewController = self.storyboard?.instantiateViewController(withIdentifier: "authorizationVC") as? AuthorizationViewController else { return }
-        let navigationController = self.navigationController
-        navigationController?.setViewControllers([authorizationViewController], animated: true)
-        self.navigationController?.popToRootViewController(animated: true)
+        switchToAuthorizationViewController()
+    }
+    
+    private func switchToAuthorizationViewController() {
+        let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+        guard let authorizationViewController = mainStoryboard.instantiateViewController(withIdentifier: "authorizationVC") as? AuthorizationViewController else { return }
+        let window = UIApplication.shared.windows.first
+        window?.rootViewController = authorizationViewController
+        window?.makeKeyAndVisible()
     }
     
     private func addLogoutButton() {
@@ -204,7 +206,6 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
          AlertController.showError()
          return
      }
-        //var user: User?
         
         networkService.currentUserInfoRequest(token: token, completion: { currentUser, errorMessage in
             if let user = currentUser {
@@ -271,7 +272,7 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         }
         let userID = userID
         
-        networkService.followUserRequest(token: token, userID: userID, completion: { user, errorMessage in
+        networkService.unfollowUserRequest(token: token, userID: userID, completion: { user, errorMessage in
             if let user = user {
                 completion(user)
             }
@@ -292,6 +293,7 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         }
         let userID = userID
         //var postsOfUser: [Post?]
+        
         
         networkService.getPostsOfUserRequest(token: token, userID: userID, completion: { posts, errorMessage in
             if let postsOfUser = posts {

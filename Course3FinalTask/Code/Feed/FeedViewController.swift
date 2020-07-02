@@ -38,7 +38,6 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         
         postCell.setPost(post)
         postCell.profileTapHandler = { [unowned self] in
-            
             self.feedToProfileSegue(postCell)
         }
         postCell.likesCounterTapHandler = { [unowned self] in
@@ -63,33 +62,34 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
     }
     
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        return cellHeights[indexPath] ?? UITableViewAutomaticDimension
+        return cellHeights[indexPath] ?? UITableView.automaticDimension
     }
     
     func likingHandler(_ cell: FeedTableViewCell) {
-        
         guard let post = cell.currentPost else { return }
         
         if !(post.currentUserLikesThisPost) {
-            
-            cell.bigLikeAnimation()
             likePost(postID: cell.postID, completion: { post in
-                cell.updateLikes(post)
+                DispatchQueue.main.async {
+                    cell.updateLikes(post)
+                }
             })
             
         } else {
             unlikePost(postID: cell.postID, completion: { post in
-                cell.updateLikes(post)
+                DispatchQueue.main.async {
+                    cell.updateLikes(post)
+                }
             })
             
         }
         
         getFeed(completion: { [weak self] incomingPosts in
-             guard let self = self else { return }
-                            DispatchQueue.main.async {
-                                 Posts.list = incomingPosts
-                                 self.feedTableView.reloadData()
-                                 self.feedTableView.layoutIfNeeded()
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                Posts.list = incomingPosts
+                self.feedTableView.reloadData()
+                self.feedTableView.layoutIfNeeded()
                                 
             }
         })
@@ -117,15 +117,15 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         getUserInfo(userID: cell.authorID, completion: { user in
             DispatchQueue.main.async {
                 destinationController.user = user
+                
+                self.getPost(postID: cell.postID, completion: { post in
+                    DispatchQueue.main.async {
+                        destinationController.post = post
+                        self.navigationController!.pushViewController(destinationController, animated: true)
+                    }
+                })
             }
         })
-        getPost(postID: cell.authorID, completion: { post in
-            DispatchQueue.main.async {
-                destinationController.post = post
-            }
-        })
-        
-        self.navigationController!.pushViewController(destinationController, animated: true)
     }
     
     func setupPosts() {
@@ -167,17 +167,10 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
             print("Cannot read token from keychain")
             return            
         }
-          //var feed: [Post?]
           
           networkService.getFeedRequest(token: token, completion: { posts, errorMessage in
               if let feed = posts {
-                for post in feed {
-                    print("authorID \(String(describing: post.authorID))")
-                    print("id \(post.id)")
-                    print(post.authorUsername)
-                    print(post.createdTime)
-                }
-                  completion(feed) //posts
+                  completion(feed)
               }
               else if let message = errorMessage {
               AlertController.showError(with: message)
@@ -195,6 +188,7 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
          return
      }
         let postID = postID
+        print(postID)
         
         networkService.getPostRequest(token: token, postID: postID, completion: { receivedPost, errorMessage in
             if let post = receivedPost {
@@ -216,7 +210,6 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
          return
      }
         let postID = postID
-        //var post: Post?
         
         networkService.likePostRequest(token: token, postID: postID, completion: { likedPost, errorMessage in
             if let post = likedPost {

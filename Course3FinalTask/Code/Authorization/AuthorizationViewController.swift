@@ -72,19 +72,24 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {
     var networkService = NetworkService()
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        guard let username = usernameTextField.text, let password = passwordTextField.text else {
-            print("No username or password received")
-            return false
-        }
+        if textField == usernameTextField {
+            textField.resignFirstResponder()
+            passwordTextField.becomeFirstResponder()
+        } else {
+            
+            guard let username = usernameTextField.text, let password = passwordTextField.text else {
+                print("No username or password received")
+                return false
+            }
         
-        guard username.count > 0, password.count > 0 else {
-            print("No username or password received")
-            return false
-        }
-        
-        userSignIn(login: username, password: password)
-        textField.resignFirstResponder()
-        
+            guard username.count > 0, password.count > 0 else {
+                print("No username or password received")
+                return false
+            }
+         
+            userSignIn(login: username, password: password)
+            textField.resignFirstResponder()
+            }
         
         return true
     }

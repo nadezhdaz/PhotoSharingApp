@@ -21,6 +21,9 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        for item in photos {
+            print("item \(item)")
+        }
         setPhotos()
     }
     
@@ -31,9 +34,20 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let photoCell = newPhotoCollectionView.dequeueCell(of: PhotoCollectionViewCell.self, for: indexPath)
         let imageName = photos[indexPath.row]
-        let image = UIImage(contentsOfFile: imageName)
+        //let data = Data(content)
         
-        photoCell.configure(with: image!)
+        let end = imageName.index(imageName.endIndex, offsetBy: -4)
+        let range = imageName.startIndex..<end
+        let imageNewName = imageName[range]
+        let im = String(describing: imageNewName)
+        let bundlePath = Bundle.main.path(forResource: im, ofType: "jpg")
+        let imageTwo = UIImage(contentsOfFile: bundlePath!)
+        
+        //let imageData = UIImage(data: photos[indexPath.row])
+        let image = UIImage(contentsOfFile: imageName)//(contentsOfFile: imageName)
+        //let imageView = UIImageView(image: UIImage(contentsOfFile: imageName))
+        print("imageName \(imageName)")
+        photoCell.configure(with: imageTwo!)
         //photoCell.configure(with: photos[indexPath.row])
         
         return photoCell

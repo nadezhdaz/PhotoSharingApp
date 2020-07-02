@@ -25,7 +25,7 @@ struct User: Codable {
 
 struct Post: Codable {
     var id: String
-    var authorID: String?
+    var author: String?
     var description: String
     var image: URL
     var createdTime: String
@@ -34,9 +34,9 @@ struct Post: Codable {
     var authorUsername: String
     var authorAvatar: URL
     
-    enum CodingKeys: String, CodingKey {
+    /*enum CodingKeys: String, CodingKey {
         case id
-        case authorID = "author_id"
+        case authorID = "author_"
         case description
         case image
         case createdTime
@@ -44,7 +44,7 @@ struct Post: Codable {
         case likedByCount
         case authorUsername
         case authorAvatar
-    }
+    }*/
 }
 
 struct Token: Codable {
@@ -127,7 +127,6 @@ class NetworkService {
             } else if let data = data,
                 let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
-                
                  do {
                     let decoder = JSONDecoder()
                     token = try decoder.decode(Token.self, from: data)
@@ -155,7 +154,7 @@ class NetworkService {
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        request.httpMethod = "GET"
+        request.httpMethod = "POST"
         request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
@@ -343,7 +342,6 @@ class NetworkService {
     
     func followUserRequest(token: String, userID: String, completion: @escaping (User?, String?) -> Void) {
         let token = token
-        //let id = userID
         let id = ["userID": userID]
         var user: User?
         var errorMessage = ""
@@ -408,7 +406,6 @@ class NetworkService {
                     
                 }
                 completion(user, nil)
-                
             }
             
         }
@@ -418,23 +415,29 @@ class NetworkService {
     
     func unfollowUserRequest(token: String, userID: String, completion: @escaping (User?, String?) -> Void) {
         let token = token
-        let id = userID
+        let id = ["userID": userID]
         var user: User?
         var errorMessage = ""
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
-        urlComponents.path = "users/unfollow"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "userID", value: id)
-        ]
+        urlComponents.port = port
+        urlComponents.path = "/users/unfollow"
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(token, forHTTPHeaderField: "token")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: id, options: .prettyPrinted)
+        } catch let error {
+            print(error.localizedDescription)
+        }
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -475,6 +478,7 @@ class NetworkService {
                     return
                     
                 }
+                print(user)
                 completion(user, nil)
                 
             }
@@ -530,12 +534,14 @@ class NetworkService {
                     decoder.keyDecodingStrategy = .convertFromSnakeCase
                     let followersUserInfo = try decoder.decode([User].self, from: data)
                     followers = followersUserInfo
+                    
                   } catch {
                     debugPrint(error)
                     print("JSONDecoder error: \(error.localizedDescription)\n")
                     return
                     
                 }
+                
                 completion(followers, nil)
                 
             }
@@ -555,7 +561,7 @@ class NetworkService {
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.port = port
-        urlComponents.path = "users/\(id)/following"
+        urlComponents.path = "/users/\(id)/following"
         
         guard let url = urlComponents.url else { return }
         
@@ -616,7 +622,7 @@ class NetworkService {
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.port = port
-        urlComponents.path = "users/\(id)/posts"
+        urlComponents.path = "/users/\(id)/posts"
         
         guard let url = urlComponents.url else { return }
         
@@ -682,13 +688,9 @@ class NetworkService {
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
         
         request.httpMethod = "GET"
         request.setValue(token, forHTTPHeaderField: "token")
-        
-        //request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        //request.addValue("application/json", forHTTPHeaderField: "Accept")
         
         
         let task = URLSession.shared.dataTask(with: request) {
@@ -709,14 +711,10 @@ class NetworkService {
                 let data = data,
                 let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
-                print(data.description)
                   do {
-                    let decoder = JSONDecoder()
-                    //decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    
+                    let decoder = JSONDecoder()                    
                     decoder.dateDecodingStrategy = .secondsSince1970
-                    let postsInfo = try decoder.decode([Post].self, from: data)//Array<Post>.self
-                    print(postsInfo[0].id)
+                    let postsInfo = try decoder.decode([Post].self, from: data)
                     posts = postsInfo
                   } catch {
                     debugPrint(error)
@@ -796,7 +794,7 @@ class NetworkService {
     
     func likePostRequest(token: String, postID: String, completion: @escaping (Post?, String?) -> Void) {
         let token = token
-        let id = postID
+        let id = ["postID":postID]
         var post: Post?
         var errorMessage = ""
         
@@ -805,17 +803,21 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "/posts/like"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "postID", value: id)
-        ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
-        //request.allHTTPHeaderFields = token
         
         request.httpMethod = "POST"
         request.setValue(token, forHTTPHeaderField: "token")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: id, options: .prettyPrinted)
+        } catch let error {
+            print(error.localizedDescription)
+        }
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -862,7 +864,7 @@ class NetworkService {
     
     func unlikePostRequest(token: String, postID: String, completion: @escaping (Post?, String?) -> Void) {
         let token = token
-        let id = postID
+        let id = ["postID":postID]
         var post: Post?
         var errorMessage = ""
         
@@ -871,15 +873,20 @@ class NetworkService {
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "/posts/unlike"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "postID", value: id)
-        ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(token, forHTTPHeaderField: "token")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: id, options: .prettyPrinted)
+        } catch let error {
+            print(error.localizedDescription)
+        }
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in
@@ -934,7 +941,7 @@ class NetworkService {
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.port = port
-        urlComponents.path = "posts/\(id)/likes"
+        urlComponents.path = "/posts/\(id)/likes"
         
         guard let url = urlComponents.url else { return }
         
@@ -992,7 +999,7 @@ class NetworkService {
         var post: Post?
         var errorMessage = ""
         
-        guard let imageData = UIImageJPEGRepresentation(image, 1.0) else {
+        guard let imageData = image.jpegData(compressionQuality: 1.0) else {
             return
         }
         let base64ImageString = imageData.base64EncodedString()
@@ -1002,7 +1009,7 @@ class NetworkService {
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.port = port
-        urlComponents.path = "posts/create"
+        urlComponents.path = "/posts/create"
         urlComponents.queryItems = [
             URLQueryItem(name: "image", value: base64ImageString),
             URLQueryItem(name: "description", value: description)

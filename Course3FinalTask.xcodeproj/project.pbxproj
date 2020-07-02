@@ -268,6 +268,7 @@
 				TargetAttributes = {
 					74B79253202B3254006BCB41 = {
 						CreatedOnToolsVersion = 9.2;
+						LastSwiftMigration = 1150;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -506,7 +507,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.e-legion.Course3FinalTask";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 				VALID_ARCHS = "$(VALID_ARCHS)";
 			};
@@ -537,7 +538,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.e-legion.Course3FinalTask";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 				VALID_ARCHS = "$(VALID_ARCHS)";
 			};

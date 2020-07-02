@@ -22,7 +22,6 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         self.navigationController?.navigationBar.tintColor = UIColor(red: 0.0, green: 122/255, blue: 1.0, alpha: 1)
         setupList()
     }
@@ -50,63 +49,59 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
     }
     
     private func setupList() {
-        //var user: User
-        //var currentUser: User
-        //var post = self.post
-        
-        DispatchQueue.main.async {
-            //var checkToken: Bool
-            //self.networkHandler.checkToken(completion: { result in
-             //   checkToken = result
-            //})
-            if self.user == nil  {
-                self.getCurrentUserInfo(completion: { currentUser in
-                    self.user = currentUser
-                })
-            }
-            
-            switch self.listIdentifier {
-                case "followers":
-                    guard let user = self.user else { return }
-                    self.userListNavigationItem.title = "Followers"
-                    self.getFollowers(userID: user.id, completion: { [weak self] users in
-                        self?.users = users
-                    })
-                    
-                    self.userListTableView.reloadData()
-                    Spinner.stop()
-                case "following":
-                    guard let user = self.user else { return }
-                    self.userListNavigationItem.title = "Following"
-                    self.getFollowingUsers(userID: user.id, completion: { [weak self] users in
-                        self?.users = users
-                    })
-                    
-                    self.userListTableView.reloadData()
-                    Spinner.stop()
-                case "likes":
-                    guard let post = self.post else { return }
-                    self.userListNavigationItem.title = "Likes"
-                    self.getLikesForPost(postID: post.id, completion: { [weak self] users in
-                        self?.users = users
-                    })
-                    
-                    self.userListTableView.reloadData()
-                    Spinner.stop()
-                    
-                default:
-                    print("List identifier error")
-                    AlertController.showLocalError()
+        getCurrentUserInfo(completion: { [weak self] currentUser in
+            DispatchQueue.main.async {
+                if self?.user == nil {
+                    self?.user = currentUser
                 }
                 
-            self.userListTableView.rowHeight = UITableViewAutomaticDimension
-            self.userListTableView.estimatedRowHeight = 45.0
-                
-            self.userListTableView.register(UINib(nibName: String(describing: UserListCell.self), bundle: nil), forCellReuseIdentifier: String(describing: UserListCell.self))
-                
-            self.userListTableView.delegate = self
-            self.userListTableView.dataSource = self
+                switch self?.listIdentifier {
+                case "followers":
+                    guard let user = self?.user else { return }
+                    self?.userListNavigationItem.title = "Followers"
+                    self?.getFollowers(userID: user.id, completion: { [weak self] users in
+                        DispatchQueue.main.async {
+                            self?.users = users
+                            self?.userListTableView.reloadData()
+                            Spinner.stop()
+                        }
+                    })
+                case "following":
+                    guard let user = self?.user else { return }
+                    self?.userListNavigationItem.title = "Following"
+                    self?.getFollowingUsers(userID: user.id, completion: { [weak self] users in
+                        DispatchQueue.main.async {
+                            self?.users = users
+                            self?.userListTableView.reloadData()
+                            Spinner.stop()
+                        }
+                    })
+                case "likes":
+                    guard let post = self?.post else { print("gone soar"); return }
+                    self?.userListNavigationItem.title = "Likes"
+                    self?.getLikesForPost(postID: post.id, completion: { [weak self] users in
+                        DispatchQueue.main.async {
+                            self?.users = users
+                            self?.userListTableView.reloadData()
+                            Spinner.stop()
+                        }
+                    })
+                default:
+                    print("List identifier error")
+                    Spinner.stop()
+                    AlertController.showLocalError()
+                }
+                    
+                self?.userListTableView.rowHeight = UITableView.automaticDimension
+                self?.userListTableView.estimatedRowHeight = 45.0
+                    
+                self?.userListTableView.register(UINib(nibName: String(describing: UserListCell.self), bundle: nil), forCellReuseIdentifier: String(describing: UserListCell.self))
+                    
+                self?.userListTableView.delegate = self
+                self?.userListTableView.dataSource = self
             }
+            
+        })
 
     }
     
@@ -116,7 +111,6 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
          AlertController.showError()
          return
      }
-        //var user: User?
         
         networkService.currentUserInfoRequest(token: token, completion: { currentUser, errorMessage in
             if let user = currentUser {
@@ -124,6 +118,7 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
             }
             else if let message = errorMessage {
             AlertController.showError(with: message)
+                self.dismiss(animated: true, completion: nil)
             }
             else {
              AlertController.showError()

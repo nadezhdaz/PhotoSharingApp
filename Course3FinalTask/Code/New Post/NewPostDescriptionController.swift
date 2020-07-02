@@ -27,13 +27,13 @@ class NewPostDescriptionController: UIViewController {
             guard let self = self else { return }
             DispatchQueue.main.async {
                 guard let navController = self.tabBarController?.viewControllers?.first as? UINavigationController else { return }
-                guard let destinationController = navController.childViewControllers.first as? FeedViewController else { return }
+                guard let destinationController = navController.children.first as? FeedViewController else { return }
                 
                 destinationController.navigationController?.popToRootViewController(animated: true)
                 Posts.list.insert(newPost, at: 0)
                 destinationController.feedTableView.reloadData()
                 destinationController.feedTableView.layoutIfNeeded()
-                destinationController.feedTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: UITableViewScrollPosition.top, animated: true)
+                destinationController.feedTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: UITableView.ScrollPosition.top, animated: true)
                 self.tabBarController?.selectedIndex = 0
                 self.navigationController?.popToRootViewController(animated: true)
                 Spinner.stop()
