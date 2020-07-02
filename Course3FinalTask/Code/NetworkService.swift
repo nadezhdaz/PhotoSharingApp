@@ -1002,24 +1002,30 @@ class NetworkService {
         guard let imageData = image.jpegData(compressionQuality: 1.0) else {
             return
         }
-        let base64ImageString = imageData.base64EncodedString()
-        //let base64ImageString = imageData.base64EncodedString(options: .lineLength64Characters)
+        //let base64ImageString = imageData.base64EncodedString()
+        let base64ImageString = imageData.base64EncodedString(options: .lineLength64Characters)
+        
+        let postInformation = ["image": base64ImageString, "description": description]
         
         var urlComponents = URLComponents()
         urlComponents.scheme = scheme
         urlComponents.host = host
         urlComponents.port = port
         urlComponents.path = "/posts/create"
-        urlComponents.queryItems = [
-            URLQueryItem(name: "image", value: base64ImageString),
-            URLQueryItem(name: "description", value: description)
-        ]
         
         guard let url = urlComponents.url else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(token, forHTTPHeaderField: "token")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: postInformation, options: .prettyPrinted)
+        } catch let error {
+            print(error.localizedDescription)
+        }
         
         let task = URLSession.shared.dataTask(with: request) {
             [weak self] data, response, error in

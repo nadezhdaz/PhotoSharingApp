@@ -90,8 +90,6 @@ class FeedTableViewCell: UITableViewCell {
     }
     
     private func performBigLikeAnimation(view: UIView) {
-        view.alpha = 0
-        
         UIView.animate(withDuration: 0.1, delay: 0, options: [.curveLinear], animations: {
             view.alpha = 1
         }) { completion in
