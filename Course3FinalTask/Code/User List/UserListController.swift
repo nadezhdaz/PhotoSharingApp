@@ -137,7 +137,7 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
         
         networkService.getFollowersRequest(token: token, userID: userID, completion: { users, errorMessage in
             if let followers = users {
-             completion(followers) //users
+             completion(followers)
             }
             else if let message = errorMessage {
             AlertController.showError(with: message)
@@ -158,7 +158,7 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
         
         networkService.getFollowingUsersRequest(token: token, userID: userID, completion: { users, errorMessage in
             if let followingUsers = users {
-                completion(followingUsers) //users
+                completion(followingUsers)
             }
             else if let message = errorMessage {
             AlertController.showError(with: message)
@@ -176,7 +176,6 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
          return
      }
         let postID = postID
-        //var users: [User?]
         
         networkService.getLikesForPostRequest(token: token, postID: postID, completion: { usersLikedPost, errorMessage in
             if let users = usersLikedPost {

@@ -230,7 +230,6 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
          return
      }
         let postID = postID
-        //var post: Post?
         
         networkService.unlikePostRequest(token: token, postID: postID, completion: { unlikedPost, errorMessage in
             if let post = unlikedPost {

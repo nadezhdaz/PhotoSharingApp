@@ -24,6 +24,7 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {
         }
         
     }
+    
     @IBOutlet weak var passwordTextField: UITextField! {
            didSet {
             passwordTextField.autocorrectionType = .no
@@ -33,6 +34,7 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {
             passwordTextField.addTarget(self, action: #selector(textFieldDidChanged(_:)), for: .editingChanged)
         }
        }
+    
     @IBAction func signInButtonPressed(_ sender: Any) {
         guard let username = usernameTextField.text, let password = passwordTextField.text else {
             print("No username or password received")
@@ -45,13 +47,8 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {
         }
         
         userSignIn(login: username, password: password)
-        
-        //networkHandler.login(login: username, password: password, completion: {
-        //    self.authorizationToTabBarSegue()
-        //})
-        
-        
     }
+    
     @IBOutlet weak var signInButton: UIButton! {
         didSet {
             signInButton.isEnabled = false
@@ -94,33 +91,16 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {
         return true
     }
     
-    func authorizationToTabBarSegue() {
+    private func authorizationToTabBarSegue() {
         DispatchQueue.main.async {
             let mainStoryboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
             let tabbarController = mainStoryboard.instantiateViewController(withIdentifier: "tabVC") as! UITabBarController
-            //let destinationController = mainStoryboard.instantiateViewController(withIdentifier: "feedVC") as! FeedViewController
             let navController = UINavigationController(rootViewController: tabbarController)
             let appDelegate = (UIApplication.shared.delegate as! AppDelegate)
             appDelegate.window?.rootViewController = tabbarController
-            //UIApplication.shared.keyWindow?.rootViewController?.present(navController, animated: true, completion: nil)
-            //UIApplication.shared.keyWindow?.rootViewController?.present(destinationController, animated: true, completion: nil)
             Spinner.start()
             navController.popToRootViewController(animated: true)
-            
-           /* guard let destinationController = self.storyboard?.instantiateViewController(withIdentifier: "feedVC") as? FeedViewController else { return }
-            guard let rootViewController = UIApplication.shared.windows.first!.rootViewController as? FeedViewController else { return }
-        let navigationController = destinationController.navigationController
-            let navigationControllerSecond = rootViewController.navigationController
-        //navigationController?.setViewControllers([destinationController], animated: true)
-            let tabBarController = destinationController.tabBarController
-            tabBarController?.present(destinationController, animated: true)
-        Spinner.start()
-            navigationControllerSecond?.popToRootViewController(animated: true)*/
-            
-        //navigationController?.popToRootViewController(animated: true)
-           // navigationControllerSecond?.pushViewController(destinationController, animated: true)
-    }
-        //self.navigationController!.pushViewController(destinationController, animated: true)
+        }
     }
     
    private func userSignIn(login: String, password: String) {
@@ -138,8 +118,7 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {
                 
             })
     }
-    
-    
+        
 }
 
 

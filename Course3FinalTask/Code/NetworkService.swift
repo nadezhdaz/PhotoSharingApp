@@ -33,25 +33,12 @@ struct Post: Codable {
     var likedByCount: Int
     var authorUsername: String
     var authorAvatar: URL
-    
-    /*enum CodingKeys: String, CodingKey {
-        case id
-        case authorID = "author_"
-        case description
-        case image
-        case createdTime
-        case currentUserLikesThisPost
-        case likedByCount
-        case authorUsername
-        case authorAvatar
-    }*/
 }
 
 struct Token: Codable {
     var token: String
 }
 
-/// Runs query data task
 class NetworkService {
     //
     // MARK: - Constants
@@ -64,24 +51,11 @@ class NetworkService {
     let jsonHeaders = [
         "Content-Type" : "application/json"
     ]
-    //
-    // MARK: - Variables And Properties
-    //
-    
-    var dataTask: URLSessionDataTask?
-    //var errorMessage = ""
-    
-    //
-    // MARK: - Type Alias
-    //
-    //typealias JSONDictionary = [String: Any]
-    //typealias AuthorizationResult = (String?, String) -> Void
     
     //
     // MARK: - Internal Methods
     //
     
-
     func signInRequest(login: String, password: String, completion: @escaping (String?, String?) -> Void) {
         let userCredentials = ["login": login, "password": password]
         var token: Token?
@@ -107,10 +81,7 @@ class NetworkService {
         }
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
             response.statusCode == 422 {
@@ -158,10 +129,7 @@ class NetworkService {
         request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
@@ -198,10 +166,7 @@ class NetworkService {
         request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
@@ -240,10 +205,7 @@ class NetworkService {
         request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
@@ -298,10 +260,7 @@ class NetworkService {
         request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
                 if let response = response as? HTTPURLResponse,
                 response.statusCode == 400 {
@@ -367,10 +326,7 @@ class NetworkService {
         }
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
@@ -440,10 +396,7 @@ class NetworkService {
         }
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
@@ -506,10 +459,7 @@ class NetworkService {
         request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
@@ -569,10 +519,7 @@ class NetworkService {
         request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
@@ -630,10 +577,7 @@ class NetworkService {
         request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
@@ -693,10 +637,7 @@ class NetworkService {
         
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {
@@ -749,10 +690,7 @@ class NetworkService {
         request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
@@ -819,10 +757,7 @@ class NetworkService {
         }
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
@@ -888,10 +823,7 @@ class NetworkService {
         }
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
@@ -949,10 +881,7 @@ class NetworkService {
         request.setValue(token, forHTTPHeaderField: "token")
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
@@ -1026,10 +955,7 @@ class NetworkService {
         }
         
         let task = URLSession.shared.dataTask(with: request) {
-            [weak self] data, response, error in
-            defer {
-                self?.dataTask = nil
-            }
+            data, response, error in
             
             if let response = response as? HTTPURLResponse,
             response.statusCode == 400 {

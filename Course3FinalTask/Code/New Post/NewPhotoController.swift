@@ -33,8 +33,7 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
         let photoCell = newPhotoCollectionView.dequeueCell(of: PhotoCollectionViewCell.self, for: indexPath)
         let path = photos[indexPath.row]
         let image = UIImage(contentsOfFile: path)
-        photoCell.configure(with: image!)
-        
+        photoCell.configure(with: image!)        
         return photoCell
     }
     
@@ -70,20 +69,9 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
 
             for item in photosArray {
                 let bundlePath = Bundle.main.path(forResource: item, ofType: nil)
-                //self.photos.append(item)
                 self.photos.append(bundlePath!)
-                //self.pathes.append(convertName(item))
             }
         }
-    }
-    
-    private func convertName(_ name: String) -> String {
-        let end = name.index(name.endIndex, offsetBy: -4)
-        let range = name.startIndex..<end
-        let imageNewName = name[range]
-        let im = String(describing: imageNewName)
-        guard let bundlePath = Bundle.main.path(forResource: im, ofType: "jpg") else { return "" }
-        return bundlePath
     }
     
     private func newPostToFiltersListSegue(path: String) {
@@ -100,7 +88,6 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
 }
 
 extension UIImage {
-    
     func resized(toWidth width: CGFloat, isOpaque: Bool = true) -> UIImage? { //to width 50
         let canvas = CGSize(width: width, height: CGFloat(ceil(width/size.width * size.height)))
         let format = imageRendererFormat

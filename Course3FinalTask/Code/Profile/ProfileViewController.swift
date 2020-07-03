@@ -11,20 +11,8 @@ import UIKit
 class ProfileViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     
     @IBOutlet weak var usernameTitle: UINavigationItem! //{
-     //   didSet {
-     //       usernameTitle.title = user?.username
-     //   }
-   // }
-    @IBOutlet weak var photosCollectionView: UICollectionView! //{
-     //   didSet {
-     //       photosCollectionView.register(UINib(nibName: String(describing: PhotoCollectionViewCell.self), bundle: nil), forCellWithReuseIdentifier: String(describing: //PhotoCollectionViewCell.self))
-     //       photosCollectionView.register(UINib(nibName: String(describing: HeaderCollectionViewCell.self), bundle: nil), forSupplementaryViewOfKind: //UICollectionElementKindSectionHeader, withReuseIdentifier: String(describing: HeaderCollectionViewCell.self))
-     //
-     //       photosCollectionView.delegate = self
-     //       photosCollectionView.dataSource = self
-     //       photosCollectionView.reloadData()
-     //   }
-   // }
+    @IBOutlet weak var photosCollectionView: UICollectionView!
+
     var userPosts: [Post] = []
     var user: User?
     var currentUser: User?
@@ -227,7 +215,6 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
          return
         }
         let userID = userID
-        //var user: User?
         
         networkService.userInfoRequest(token: token, userID: userID, completion: { user, errorMessage in
             if let user = user {
@@ -291,7 +278,6 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
          return
         }
         let userID = userID
-        //var postsOfUser: [Post?]
         
         
         networkService.getPostsOfUserRequest(token: token, userID: userID, completion: { posts, errorMessage in

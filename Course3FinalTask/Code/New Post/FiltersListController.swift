@@ -22,22 +22,11 @@ class FiltersListController: UIViewController, UICollectionViewDataSource, UICol
         navigationController.pushViewController(destinationController, animated: true)
     }
     
-    let imagesPhotoArray = [String]()
-    let imagesPreviewArray = [String]()//DataProviders.shared.photoProvider.thumbnailPhotos()
-    
     let queue = OperationQueue()
-    
     let filters = Filters().filterArray
-    
     var imageFilterPreview: UIImage?
-    
-    var imageIndex: Int? = 0
-
     var chosenImage: UIImage?
-    
     var filtersOutput = [FilterPreview]()
-    
-    var myFilters = [FilterPreview]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -120,9 +109,6 @@ class FiltersListController: UIViewController, UICollectionViewDataSource, UICol
             for filter in self.filters {
                 
                 let imagePreview = self.imageFilterPreview
-                ///let imagePreview = self.imagesPreviewArray[self.imageIndex!]
-                //let imageName = self.imagesPreviewArray[self.imageIndex!]
-                //let imagePreview = UIImage(contentsOfFile: imageName)
                 let operation = FilterImageOperation(inputImage: imagePreview, filter: filter)
                 
                 operation.completionBlock = {
