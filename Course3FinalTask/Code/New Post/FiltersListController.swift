@@ -29,6 +29,8 @@ class FiltersListController: UIViewController, UICollectionViewDataSource, UICol
     
     let filters = Filters().filterArray
     
+    var imageFilterPreview: UIImage?
+    
     var imageIndex: Int? = 0
 
     var chosenImage: UIImage?
@@ -74,8 +76,7 @@ class FiltersListController: UIViewController, UICollectionViewDataSource, UICol
         
         operation.completionBlock = {
             
-            DispatchQueue.main.async {
-                
+            DispatchQueue.main.async {                
                 self.imagePreview.image = operation.outputImage
                 Spinner.stop()
             }
@@ -118,18 +119,20 @@ class FiltersListController: UIViewController, UICollectionViewDataSource, UICol
             
             for filter in self.filters {
                 
-                //let imagePreview = self.imagesPreviewArray[self.imageIndex!]
-                let imageName = self.imagesPreviewArray[self.imageIndex!]
-                let imagePreview = UIImage(contentsOfFile: imageName)
+                let imagePreview = self.imageFilterPreview
+                ///let imagePreview = self.imagesPreviewArray[self.imageIndex!]
+                //let imageName = self.imagesPreviewArray[self.imageIndex!]
+                //let imagePreview = UIImage(contentsOfFile: imageName)
                 let operation = FilterImageOperation(inputImage: imagePreview, filter: filter)
                 
                 operation.completionBlock = {
                     
                     DispatchQueue.main.async {
                         
-                        let newPreview = FilterPreview.init(image: operation.outputImage, name: filter)
+                        let newPreview = FilterPreview(image: operation.outputImage, name: filter)
                         
                         guard let index = self.filtersOutput.firstIndex(of: FilterPreview(name: filter)) else { return }
+                        
                         let indexPosition = IndexPath(row: index, section: 0)
                         self.filtersOutput[index] = newPreview
                         self.filtersPreviewCollection.reloadItems(at: [indexPosition])
@@ -145,3 +148,5 @@ class FiltersListController: UIViewController, UICollectionViewDataSource, UICol
     }
     
 }
+
+

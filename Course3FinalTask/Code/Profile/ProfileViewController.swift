@@ -123,7 +123,6 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         getUserInfo(userID: view.authorID, completion: { user in
             DispatchQueue.main.async {
                 destinationController.user = user
-                print("destination controller user \(user.id)")
             }
         })
         

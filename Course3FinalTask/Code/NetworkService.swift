@@ -478,7 +478,6 @@ class NetworkService {
                     return
                     
                 }
-                print(user)
                 completion(user, nil)
                 
             }
@@ -1002,8 +1001,7 @@ class NetworkService {
         guard let imageData = image.jpegData(compressionQuality: 1.0) else {
             return
         }
-        //let base64ImageString = imageData.base64EncodedString()
-        let base64ImageString = imageData.base64EncodedString(options: .lineLength64Characters)
+        let base64ImageString = imageData.base64EncodedString()
         
         let postInformation = ["image": base64ImageString, "description": description]
         

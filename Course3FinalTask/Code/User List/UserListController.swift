@@ -77,7 +77,7 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
                         }
                     })
                 case "likes":
-                    guard let post = self?.post else { print("gone soar"); return }
+                    guard let post = self?.post else { return }
                     self?.userListNavigationItem.title = "Likes"
                     self?.getLikesForPost(postID: post.id, completion: { [weak self] users in
                         DispatchQueue.main.async {

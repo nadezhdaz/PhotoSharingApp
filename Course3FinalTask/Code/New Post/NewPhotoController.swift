@@ -18,12 +18,10 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
     }
     
     var photos = [String]()
+    var pathes = [String]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        for item in photos {
-            print("item \(item)")
-        }
         setPhotos()
     }
     
@@ -33,36 +31,16 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let photoCell = newPhotoCollectionView.dequeueCell(of: PhotoCollectionViewCell.self, for: indexPath)
-        let imageName = photos[indexPath.row]
-        //let data = Data(content)
-        
-        let end = imageName.index(imageName.endIndex, offsetBy: -4)
-        let range = imageName.startIndex..<end
-        let imageNewName = imageName[range]
-        let im = String(describing: imageNewName)
-        let bundlePath = Bundle.main.path(forResource: im, ofType: "jpg")
-        let imageTwo = UIImage(contentsOfFile: bundlePath!)
-        
-        //let imageData = UIImage(data: photos[indexPath.row])
-        let image = UIImage(contentsOfFile: imageName)//(contentsOfFile: imageName)
-        //let imageView = UIImageView(image: UIImage(contentsOfFile: imageName))
-        print("imageName \(imageName)")
-        photoCell.configure(with: imageTwo!)
-        //photoCell.configure(with: photos[indexPath.row])
+        let path = photos[indexPath.row]
+        let image = UIImage(contentsOfFile: path)
+        photoCell.configure(with: image!)
         
         return photoCell
     }
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let imageName = photos[indexPath.row]
-        let image = UIImage(contentsOfFile: imageName)
-        //let image = photos[indexPath.row]
-        
-        guard let destinationController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "filtersPreviewVC") as? FiltersListController else { return }
-        guard let navigationController = navigationController  else { return }
-        destinationController.chosenImage = image
-        destinationController.imageIndex = indexPath.row
-        navigationController.pushViewController(destinationController, animated: true)
+        let path = photos[indexPath.row]
+        newPostToFiltersListSegue(path: path)
     }
     
     // MARK: - UICollectionViewDelegateFlowLayout
@@ -88,11 +66,47 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
             let imagePath = path + "/new"
             let filemanager = FileManager.default
             let photosArray = try! filemanager.contentsOfDirectory(atPath: imagePath)
+            
 
             for item in photosArray {
-                self.photos.append(item)
+                let bundlePath = Bundle.main.path(forResource: item, ofType: nil)
+                //self.photos.append(item)
+                self.photos.append(bundlePath!)
+                //self.pathes.append(convertName(item))
             }
         }
     }
     
+    private func convertName(_ name: String) -> String {
+        let end = name.index(name.endIndex, offsetBy: -4)
+        let range = name.startIndex..<end
+        let imageNewName = name[range]
+        let im = String(describing: imageNewName)
+        guard let bundlePath = Bundle.main.path(forResource: im, ofType: "jpg") else { return "" }
+        return bundlePath
+    }
+    
+    private func newPostToFiltersListSegue(path: String) {
+        let path = path
+        let image = UIImage(contentsOfFile: path)
+        
+        guard let destinationController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "filtersPreviewVC") as? FiltersListController else { return }
+        guard let navigationController = navigationController  else { return }
+        destinationController.chosenImage = image
+        destinationController.imageFilterPreview = image?.resized(toWidth: 50.0)
+        navigationController.pushViewController(destinationController, animated: true)
+    }
+    
+}
+
+extension UIImage {
+    
+    func resized(toWidth width: CGFloat, isOpaque: Bool = true) -> UIImage? { //to width 50
+        let canvas = CGSize(width: width, height: CGFloat(ceil(width/size.width * size.height)))
+        let format = imageRendererFormat
+        format.opaque = isOpaque
+        return UIGraphicsImageRenderer(size: canvas, format: format).image {
+            _ in draw(in: CGRect(origin: .zero, size: canvas))
+        }
+    }
 }

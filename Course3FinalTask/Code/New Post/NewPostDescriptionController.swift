@@ -26,16 +26,7 @@ class NewPostDescriptionController: UIViewController {
         createPost(image: image, description: description, completion: { [weak self] newPost in
             guard let self = self else { return }
             DispatchQueue.main.async {
-                guard let navController = self.tabBarController?.viewControllers?.first as? UINavigationController else { return }
-                guard let destinationController = navController.children.first as? FeedViewController else { return }
-                
-                destinationController.navigationController?.popToRootViewController(animated: true)
-                Posts.list.insert(newPost, at: 0)
-                destinationController.feedTableView.reloadData()
-                destinationController.feedTableView.layoutIfNeeded()
-                destinationController.feedTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: UITableView.ScrollPosition.top, animated: true)
-                self.tabBarController?.selectedIndex = 0
-                self.navigationController?.popToRootViewController(animated: true)
+                self.addPostToFeed(post: newPost)
                 Spinner.stop()
             }
         } )
@@ -50,7 +41,6 @@ class NewPostDescriptionController: UIViewController {
      }
         let image = image
         let description = description
-        //var post: Post?
         
         networkService.createPostRequest(token: token, image: image, description: description, completion: { createdPost, errorMessage in
             if let post = createdPost {
@@ -63,6 +53,20 @@ class NewPostDescriptionController: UIViewController {
              AlertController.showError()
                 }
         })
+    }
+    
+    private func addPostToFeed(post: Post) {
+        let post = post
+        guard let navController = self.tabBarController?.viewControllers?.first as? UINavigationController else { return }
+        guard let destinationController = navController.children.first as? FeedViewController else { return }
+        
+        destinationController.navigationController?.popToRootViewController(animated: true)
+        Posts.list.insert(post, at: 0)
+        destinationController.feedTableView.reloadData()
+        destinationController.feedTableView.layoutIfNeeded()
+        destinationController.scrollToFirstRow()
+        self.tabBarController?.selectedIndex = 0
+        self.navigationController?.popToRootViewController(animated: true)
     }
 
 }

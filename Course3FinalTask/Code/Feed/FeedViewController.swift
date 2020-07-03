@@ -188,7 +188,6 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
          return
      }
         let postID = postID
-        print(postID)
         
         networkService.getPostRequest(token: token, postID: postID, completion: { receivedPost, errorMessage in
             if let post = receivedPost {
@@ -244,6 +243,11 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
              AlertController.showError()
                 }
         })
+    }
+    
+    public func scrollToFirstRow() {
+      let indexPath = IndexPath(row: 0, section: 0)
+      self.feedTableView.scrollToRow(at: indexPath, at: .top, animated: true)
     }
     
 }

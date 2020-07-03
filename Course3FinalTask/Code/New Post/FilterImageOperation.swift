@@ -25,6 +25,7 @@ class FilterImageOperation: Operation {
         guard let coreImage = CIImage(image: _inputImage!) else { return }
         
         guard let filter = CIFilter(name: _chosenFilter!) else { return }
+        
         filter.setValue(coreImage, forKey: kCIInputImageKey)
         
         guard let filteredImage = filter.outputImage else { return }
