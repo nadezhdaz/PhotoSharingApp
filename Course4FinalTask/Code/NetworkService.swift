@@ -58,7 +58,6 @@ class NetworkService {
     
     func signInRequest(login: String, password: String, completion: @escaping (Result<String, NetworkError>) -> Void) {
         let userCredentials = ["login": login, "password": password]
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: nil, path: "/signin", httpMethod: "POST", json: userCredentials) else { return }
         
@@ -66,16 +65,13 @@ class NetworkService {
             data, response, error in
             
             if let response = response as? HTTPURLResponse,
-            response.statusCode == 422 {
-                errorMessage = "Unprocessable"
+                response.statusCode == 422 {
                 completion(.failure(.unprocessable))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error"
                 completion(.failure(.transferError))
             } else if let data = data,
                 let response = response as? HTTPURLResponse,
@@ -91,7 +87,6 @@ class NetworkService {
     
     func signOutRequest(token: String, completion: @escaping (Result<Bool, NetworkError>) -> Void) {
         let token = token
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/signout", httpMethod: "POST") else { return }
         
@@ -99,12 +94,10 @@ class NetworkService {
             data, response, error in
             
             if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error"
                 completion(.failure(.transferError))
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
@@ -118,7 +111,6 @@ class NetworkService {
     
     func checkTokenRequest(token: String, completion: @escaping (Result<Bool, NetworkError>) -> Void) {
         let token = token
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/checkToken", httpMethod: "GET") else { return }
         
@@ -126,12 +118,10 @@ class NetworkService {
             data, response, error in
             
             if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error"
                 completion(.failure(.transferError))
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
@@ -146,7 +136,6 @@ class NetworkService {
     
     func currentUserInfoRequest(token: String, completion: @escaping (Result<User, NetworkError>) -> Void) {
         let token = token
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/users/me", httpMethod: "GET") else { return }
         
@@ -154,12 +143,10 @@ class NetworkService {
             data, response, error in
             
             if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode != 200 {
-                errorMessage = "Transfer error"
                 completion(.failure(.transferError))
             } else if
                 let data = data,
@@ -177,7 +164,6 @@ class NetworkService {
     func userInfoRequest(token: String, userID: String, completion: @escaping (Result<User, NetworkError>) -> Void) {
         let token = token
         let id = userID
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/users/\(id)", httpMethod: "GET") else { return }
         
@@ -185,22 +171,19 @@ class NetworkService {
             data, response, error in
             
                 if let response = response as? HTTPURLResponse,
-                response.statusCode == 400 {
-                    errorMessage = "Bad request"
+                    response.statusCode == 400 {
                     completion(.failure(.badRequest))
                 } else if let response = response as? HTTPURLResponse,
                     response.statusCode == 404 {
-                        errorMessage = "Not found"
-                        completion(.failure(.notFound))
+                    completion(.failure(.notFound))
                 } else if let response = response as? HTTPURLResponse,
                     response.statusCode != 200 {
-                    errorMessage = "Transfer error"
                     completion(.failure(.transferError))
                 } else if let data = data,
-                let response = response as? HTTPURLResponse,
-                response.statusCode == 200 {
-                guard let user = self.parseUserData(data) else { return }
-                completion(.success(user))
+                    let response = response as? HTTPURLResponse,
+                    response.statusCode == 200 {
+                    guard let user = self.parseUserData(data) else { return }
+                    completion(.success(user))
             }
             
         }
@@ -211,7 +194,6 @@ class NetworkService {
     func followUserRequest(token: String, userID: String, completion: @escaping (Result<User, NetworkError>) -> Void) {
         let token = token
         let id = ["userID": userID]
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/users/follow", httpMethod: "GET", json: id) else { return }
         
@@ -220,20 +202,15 @@ class NetworkService {
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                errorMessage = "Not found"
                 completion(.failure(.notFound))
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode == 406 {
-                errorMessage = "Not acceptable"
                 completion(.failure(.notAcceptable))
-            }
-            else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+            } else if let response = response as? HTTPURLResponse,
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                response.statusCode != 200 {
                 completion(.failure(.transferError))
             } else if
                 let data = data,
@@ -251,7 +228,6 @@ class NetworkService {
     func unfollowUserRequest(token: String, userID: String, completion: @escaping (Result<User, NetworkError>) -> Void) {
         let token = token
         let id = ["userID": userID]
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/users/unfollow", httpMethod: "GET", json: id) else { return }
         
@@ -260,20 +236,16 @@ class NetworkService {
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                errorMessage = "Not found"
                 completion(.failure(.notFound))
             } else if let response = response as? HTTPURLResponse,
                 response.statusCode == 406 {
-                errorMessage = "Not acceptable"
                 completion(.failure(.notAcceptable))
                 
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
             response.statusCode != 200 {
-                errorMessage = "Transfer error"
                 completion(.failure(.transferError))
             } else if
                 let data = data,
@@ -291,7 +263,6 @@ class NetworkService {
     func getFollowersRequest(token: String, userID: String, completion: @escaping (Result<[User], NetworkError>) -> Void) {
         let token = token
         let id = userID
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/users/\(id)/followers", httpMethod: "GET") else { return }
         
@@ -300,15 +271,12 @@ class NetworkService {
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                errorMessage = "Not found"
                 completion(.failure(.notFound))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                response.statusCode != 200 {
                 completion(.failure(.transferError))
             } else if
                 let data = data,
@@ -326,7 +294,6 @@ class NetworkService {
     func getFollowingUsersRequest(token: String, userID: String, completion: @escaping (Result<[User], NetworkError>) -> Void) {
         let token = token
         let id = userID
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/users/\(id)/following", httpMethod: "GET") else { return }
         
@@ -335,15 +302,12 @@ class NetworkService {
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                errorMessage = "Not found"
                 completion(.failure(.notFound))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                response.statusCode != 200 {
                 completion(.failure(.transferError))
             } else if
                 let data = data,
@@ -361,7 +325,6 @@ class NetworkService {
     func getPostsOfUserRequest(token: String, userID: String, completion: @escaping (Result<[Post], NetworkError>) -> Void) {
         let token = token
         let id = userID
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/users/\(id)/posts", httpMethod: "GET") else { return }
         
@@ -370,15 +333,12 @@ class NetworkService {
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                errorMessage = "Not found"
                 completion(.failure(.notFound))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                response.statusCode != 200 {
                 completion(.failure(.transferError))
             } else if
                 let data = data,
@@ -395,7 +355,6 @@ class NetworkService {
     
     func getFeedRequest(token: String, completion: @escaping (Result<[Post], NetworkError>) -> Void) {
         let token = token
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/posts/feed", httpMethod: "GET") else { return }
         
@@ -404,11 +363,9 @@ class NetworkService {
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 400 {
-                errorMessage = "Bad request"
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                response.statusCode != 200 {
                 completion(.failure(.transferError))
             } else if
                 let data = data,
@@ -426,7 +383,6 @@ class NetworkService {
     func getPostRequest(token: String, postID: String, completion: @escaping (Result<Post, NetworkError>) -> Void) {
         let token = token
         let id = postID
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/posts/\(id)", httpMethod: "GET") else { return }
         
@@ -435,15 +391,12 @@ class NetworkService {
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                errorMessage = "Not found"
                 completion(.failure(.notFound))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                response.statusCode != 200 {
                 completion(.failure(.transferError))
             } else if
                 let data = data,
@@ -461,7 +414,6 @@ class NetworkService {
     func likePostRequest(token: String, postID: String, completion: @escaping (Result<Post, NetworkError>) -> Void) {
         let token = token
         let id = ["postID":postID]
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/posts/like", httpMethod: "POST", json: id) else { return }
         
@@ -470,15 +422,12 @@ class NetworkService {
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                errorMessage = "Not found"
                 completion(.failure(.notFound))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                response.statusCode != 200 {
                 completion(.failure(.transferError))
             } else if
                 let data = data,
@@ -496,7 +445,6 @@ class NetworkService {
     func unlikePostRequest(token: String, postID: String, completion: @escaping (Result<Post, NetworkError>) -> Void) {
         let token = token
         let id = ["postID":postID]
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/posts/unlike", httpMethod: "POST", json: id) else { return }
         
@@ -505,15 +453,12 @@ class NetworkService {
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                errorMessage = "Not found"
                 completion(.failure(.notFound))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                response.statusCode != 200 {
                 completion(.failure(.transferError))
             } else if
                 let data = data,
@@ -528,10 +473,9 @@ class NetworkService {
         task.resume()
     }
     
-    func getLikesForPostRequest(token: String, postID: String, completion: @escaping (Result<Post, NetworkError>) -> Void) {
+    func getLikesForPostRequest(token: String, postID: String, completion: @escaping (Result<[User], NetworkError>) -> Void) {
         let token = token
         let id = postID
-        var errorMessage = ""
         
         guard let request = urlRequestWith(token: token, path: "/posts/\(id)/likes", httpMethod: "GET") else { return }
         
@@ -540,22 +484,19 @@ class NetworkService {
             
             if let response = response as? HTTPURLResponse,
                 response.statusCode == 404 {
-                    errorMessage = "Not found"
-                    completion(.failure(.notFound))
+                completion(.failure(.notFound))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                response.statusCode != 200 {
                 completion(.failure(.transferError))
             } else if
                 let data = data,
                 let response = response as? HTTPURLResponse,
                 response.statusCode == 200 {
-                guard let post = self.parsePostData(data) else { return }
-                completion(.success(post))
+                guard let users = self.parseUsersData(data) else { return }
+                completion(.success(users))
             }
             
         }
@@ -567,7 +508,6 @@ class NetworkService {
         let token = token
         let image = image
         let description = description
-        var errorMessage = ""
         
         guard let imageData = image.jpegData(compressionQuality: 1.0) else { return }
         
@@ -580,12 +520,10 @@ class NetworkService {
             data, response, error in
             
             if let response = response as? HTTPURLResponse,
-            response.statusCode == 400 {
-                errorMessage = "Bad request"
+                response.statusCode == 400 {
                 completion(.failure(.badRequest))
             } else if let response = response as? HTTPURLResponse,
-            response.statusCode != 200 {
-                errorMessage = "Transfer error"
+                response.statusCode != 200 {
                 completion(.failure(.transferError))
             } else if
                 let data = data,
@@ -697,13 +635,13 @@ class NetworkService {
             return nil
         }
     }
-    
-    enum NetworkError: Error {
-        case notFound
-        case badRequest
-        case notAcceptable
-        case transferError
-        case unprocessable
-    }
 
+}
+
+enum NetworkError: Error {
+    case notFound
+    case badRequest
+    case notAcceptable
+    case transferError
+    case unprocessable
 }

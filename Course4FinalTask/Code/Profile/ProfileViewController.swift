@@ -194,16 +194,13 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
          return
      }
         
-        networkService.currentUserInfoRequest(token: token, completion: { currentUser, errorMessage in
-            if let user = currentUser {
-             completion(user)
+        networkService.currentUserInfoRequest(token: token, completion: { result in
+            switch result {
+            case .success(let currentUser):
+                completion(currentUser)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
         
     }
@@ -216,16 +213,13 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         }
         let userID = userID
         
-        networkService.userInfoRequest(token: token, userID: userID, completion: { user, errorMessage in
-            if let user = user {
+        networkService.userInfoRequest(token: token, userID: userID, completion: { result in
+            switch result {
+            case .success(let user):
                 completion(user)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     
@@ -237,16 +231,13 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         }
         let userID = userID
         
-        networkService.followUserRequest(token: token, userID: userID, completion: { user, errorMessage in
-            if let user = user {
+        networkService.followUserRequest(token: token, userID: userID, completion: { result in
+            switch result {
+            case .success(let user):
                 completion(user)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     
@@ -258,16 +249,13 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         }
         let userID = userID
         
-        networkService.unfollowUserRequest(token: token, userID: userID, completion: { user, errorMessage in
-            if let user = user {
+        networkService.unfollowUserRequest(token: token, userID: userID, completion: { result in
+            switch result {
+            case .success(let user):
                 completion(user)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     
@@ -279,16 +267,13 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         }
         let userID = userID
         
-        networkService.getPostsOfUserRequest(token: token, userID: userID, completion: { posts, errorMessage in
-            if let postsOfUser = posts {
-                completion(postsOfUser)
+        networkService.getPostsOfUserRequest(token: token, userID: userID, completion: { result in
+            switch result {
+            case .success(let posts):
+                completion(posts)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     
@@ -297,12 +282,12 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
             print("Cannot read token from keychain")
             return
         }
-        networkService.signOutRequest(token: token, completion: { errorMessage in
-            if let message = errorMessage {
-                AlertController.showError(with: message)
-            }
-            else {
-                SecureStorableService.safeDeleteToken()
+        networkService.signOutRequest(token: token, completion: { result in
+            switch result {
+            case .success(_):
+                print("Signed out")
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
             
         })

@@ -112,17 +112,13 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
          return
      }
         
-        networkService.currentUserInfoRequest(token: token, completion: { currentUser, errorMessage in
-            if let user = currentUser {
-             completion(user)
+        networkService.currentUserInfoRequest(token: token, completion: { result in
+            switch result {
+            case .success(let currentUser):
+                completion(currentUser)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-                self.dismiss(animated: true, completion: nil)
-            }
-            else {
-             AlertController.showError()
-                }
         })
         
     }
@@ -135,16 +131,13 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
         }
         let userID = userID
         
-        networkService.getFollowersRequest(token: token, userID: userID, completion: { users, errorMessage in
-            if let followers = users {
-             completion(followers)
+        networkService.getFollowersRequest(token: token, userID: userID, completion: { result in
+            switch result {
+            case .success(let followers):
+                completion(followers)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     
@@ -156,16 +149,13 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
         }
         let userID = userID
         
-        networkService.getFollowingUsersRequest(token: token, userID: userID, completion: { users, errorMessage in
-            if let followingUsers = users {
+        networkService.getFollowingUsersRequest(token: token, userID: userID, completion: { result in
+            switch result {
+            case .success(let followingUsers):
                 completion(followingUsers)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     
@@ -177,16 +167,13 @@ class UserListController: UIViewController, UITableViewDelegate, UITableViewData
      }
         let postID = postID
         
-        networkService.getLikesForPostRequest(token: token, postID: postID, completion: { usersLikedPost, errorMessage in
-            if let users = usersLikedPost {
-                completion(users)
+        networkService.getLikesForPostRequest(token: token, postID: postID, completion: { result in
+            switch result {
+            case .success(let usersLikedPost):
+                completion(usersLikedPost)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     

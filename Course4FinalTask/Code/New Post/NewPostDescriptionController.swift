@@ -42,16 +42,13 @@ class NewPostDescriptionController: UIViewController {
         let image = image
         let description = description
         
-        networkService.createPostRequest(token: token, image: image, description: description, completion: { createdPost, errorMessage in
-            if let post = createdPost {
+        networkService.createPostRequest(token: token, image: image, description: description, completion: { result in
+            switch result {
+            case .success(let post):
                 completion(post)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     

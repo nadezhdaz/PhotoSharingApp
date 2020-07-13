@@ -154,16 +154,13 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
         }
         let userID = userID
         
-        networkService.userInfoRequest(token: token, userID: userID, completion: { user, errorMessage in
-            if let user = user {
+        networkService.userInfoRequest(token: token, userID: userID, completion: { result in
+            switch result {
+            case .success(let user):
                 completion(user)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     
@@ -173,16 +170,13 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
             return            
         }
           
-          networkService.getFeedRequest(token: token, completion: { posts, errorMessage in
-              if let feed = posts {
-                  completion(feed)
-              }
-              else if let message = errorMessage {
-              AlertController.showError(with: message)
-              }
-              else {
-                AlertController.showError()
-                  }
+          networkService.getFeedRequest(token: token, completion: { result in
+            switch result {
+            case .success(let feed):
+                completion(feed)
+            case .failure(let error):
+                AlertController.showError(for: error)
+            }
           })
       }
     
@@ -194,16 +188,13 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
      }
         let postID = postID
         
-        networkService.getPostRequest(token: token, postID: postID, completion: { receivedPost, errorMessage in
-            if let post = receivedPost {
+        networkService.getPostRequest(token: token, postID: postID, completion: { result in
+            switch result {
+            case .success(let post):
                 completion(post)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     
@@ -215,16 +206,13 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
      }
         let postID = postID
         
-        networkService.likePostRequest(token: token, postID: postID, completion: { likedPost, errorMessage in
-            if let post = likedPost {
+        networkService.likePostRequest(token: token, postID: postID, completion: { result in
+            switch result {
+            case .success(let post):
                 completion(post)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     
@@ -236,16 +224,13 @@ class FeedViewController: UIViewController, UITableViewDelegate, UITableViewData
      }
         let postID = postID
         
-        networkService.unlikePostRequest(token: token, postID: postID, completion: { unlikedPost, errorMessage in
-            if let post = unlikedPost {
+        networkService.unlikePostRequest(token: token, postID: postID, completion: { result in
+            switch result {
+            case .success(let post):
                 completion(post)
+            case .failure(let error):
+                AlertController.showError(for: error)
             }
-            else if let message = errorMessage {
-            AlertController.showError(with: message)
-            }
-            else {
-             AlertController.showError()
-                }
         })
     }
     

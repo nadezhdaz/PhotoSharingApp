@@ -104,18 +104,14 @@ class AuthorizationViewController: UIViewController, UITextFieldDelegate {
     }
     
    private func userSignIn(login: String, password: String) {
-            networkService.signInRequest(login: login, password: password, completion: { [weak self] token, errorMessage in
-                if let newToken = token {
-                    SecureStorableService.safeSaveToken(account: login, token: newToken)
+            networkService.signInRequest(login: login, password: password, completion: { [weak self] result in
+                switch result {
+                case .success(let token):
+                    SecureStorableService.safeSaveToken(account: login, token: token)
                     self?.authorizationToTabBarSegue()
-                }
-                else if let message = errorMessage  {
-                 AlertController.showError(with: message)
-                }
-                else {
-                 AlertController.showError()
-             }
-                
+                case .failure(let error):
+                    AlertController.showError(for: error)
+                }                
             })
     }
         
