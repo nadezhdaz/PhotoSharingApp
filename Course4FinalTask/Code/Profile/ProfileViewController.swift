@@ -275,14 +275,13 @@ class ProfileViewController: UIViewController, UICollectionViewDataSource, UICol
         guard let token = SecureStorableService.safeReadToken() else {
             print("Cannot read token from keychain")
             AlertController.showError()
-         return
+            return
         }
         let userID = userID
         
-        
         networkService.getPostsOfUserRequest(token: token, userID: userID, completion: { posts, errorMessage in
             if let postsOfUser = posts {
-                completion(postsOfUser) //posts
+                completion(postsOfUser)
             }
             else if let message = errorMessage {
             AlertController.showError(with: message)
