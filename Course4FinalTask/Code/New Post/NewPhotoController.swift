@@ -60,15 +60,15 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
         return 0.0
     }
     
-    private func setPhotos()  {
-        if let path = Bundle.main.resourcePath {
-            let imagePath = path + "/new"
-            let filemanager = FileManager.default
-            let photosArray = try! filemanager.contentsOfDirectory(atPath: imagePath)            
-
+    private func setPhotos() {
+        let filemanager = FileManager.default
+        guard let path = Bundle.main.resourcePath else { return }
+        let imagePath = path + "/new"
+        if let photosArray = try? filemanager.contentsOfDirectory(atPath: imagePath) {
             for item in photosArray {
-                guard let bundlePath = Bundle.main.path(forResource: item, ofType: nil, inDirectory: "new") else { return }
-                self.photos.append(bundlePath)
+                if let bundlePath = Bundle.main.path(forResource: item, ofType: nil, inDirectory: "new") {
+                    self.photos.append(bundlePath)
+                }
             }
         }
     }
@@ -87,7 +87,7 @@ class NewPhotoController: UICollectionViewController, UICollectionViewDelegateFl
 }
 
 extension UIImage {
-    func resized(toWidth width: CGFloat, isOpaque: Bool = true) -> UIImage? { //to width 50
+    func resized(toWidth width: CGFloat, isOpaque: Bool = true) -> UIImage? {
         let canvas = CGSize(width: width, height: CGFloat(ceil(width/size.width * size.height)))
         let format = imageRendererFormat
         format.opaque = isOpaque

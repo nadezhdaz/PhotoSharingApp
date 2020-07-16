@@ -12,6 +12,14 @@ import UIKit
 // MARK: - Network Service
 //
 
+enum NetworkError: Error {
+    case notFound
+    case badRequest
+    case notAcceptable
+    case transferError
+    case unprocessable
+}
+
 struct User: Codable {
     var id: String
     var username: String
@@ -636,12 +644,4 @@ class NetworkService {
         }
     }
 
-}
-
-enum NetworkError: Error {
-    case notFound
-    case badRequest
-    case notAcceptable
-    case transferError
-    case unprocessable
 }
